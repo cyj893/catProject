@@ -1,7 +1,16 @@
 package com.example.catproject;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+
+import android.Manifest;
+import android.annotation.SuppressLint;
+import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.Bundle;
+import android.widget.Toast;
+
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -10,9 +19,8 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 
-
 public class MainActivity extends AppCompatActivity
-        implements OnMapReadyCallback {
+        implements OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener, GoogleMap.OnMyLocationClickListener {
 
     private GoogleMap mMap;
 
@@ -27,28 +35,51 @@ public class MainActivity extends AppCompatActivity
         mapFragment.getMapAsync(this);
     }
 
+    @SuppressLint("MissingPermission")
     @Override
     public void onMapReady(final GoogleMap googleMap) {
 
         mMap = googleMap;
 
-        LatLng SEOUL = new LatLng(37.56, 126.97);
+        LatLng PNU = new LatLng(35.233903, 129.079871);
 
         MarkerOptions markerOptions = new MarkerOptions();
-        markerOptions.position(SEOUL);
-        markerOptions.title("서울");
-        markerOptions.snippet("한국의 수도");
+        markerOptions.position(PNU);
+        markerOptions.title("부산대");
+        markerOptions.snippet("반가워요");
         mMap.addMarker(markerOptions);
 
 
-        // 기존에 사용하던 다음 2줄은 문제가 있습니다.
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(PNU, 15));
 
-        // CameraUpdateFactory.zoomTo가 오동작하네요.
-        //mMap.moveCamera(CameraUpdateFactory.newLatLng(SEOUL));
-        //mMap.animateCamera(CameraUpdateFactory.zoomTo(10));
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(SEOUL, 10));
+        mMap.getUiSettings().setCompassEnabled(true);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        mMap.setMyLocationEnabled(true);
+        mMap.setOnMyLocationButtonClickListener(this);
+        mMap.setOnMyLocationClickListener(this);
+
 
 
     }
 
+    @Override
+    public boolean onMyLocationButtonClick() {
+        Toast.makeText(this, "MyLoc Btn", Toast.LENGTH_SHORT).show();
+        return false;
+    }
+
+    @Override
+    public void onMyLocationClick(@NonNull Location location) {
+        Toast.makeText(this, "Current: "+location, Toast.LENGTH_LONG).show();
+
+    }
 }
