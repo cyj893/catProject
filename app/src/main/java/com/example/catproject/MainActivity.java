@@ -48,6 +48,7 @@ public class MainActivity extends AppCompatActivity
         LatLng PNU = new LatLng(35.233903, 129.079871);
 
         MarkerOptions markerOptions = new MarkerOptions();
+
         markerOptions.position(new LatLng(35.231561, 129.082566))
                     .title("cat1")
                     .snippet("반가워요")
