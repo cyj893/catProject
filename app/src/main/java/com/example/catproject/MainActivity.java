@@ -7,6 +7,8 @@ import androidx.core.app.ActivityCompat;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.os.Bundle;
 import android.widget.Toast;
@@ -15,6 +17,8 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
@@ -44,11 +48,18 @@ public class MainActivity extends AppCompatActivity
         LatLng PNU = new LatLng(35.233903, 129.079871);
 
         MarkerOptions markerOptions = new MarkerOptions();
-        markerOptions.position(PNU);
-        markerOptions.title("부산대");
-        markerOptions.snippet("반가워요");
+        markerOptions.position(new LatLng(35.231561, 129.082566))
+                    .title("cat1")
+                    .snippet("반가워요")
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.cat1));
         mMap.addMarker(markerOptions);
 
+        markerOptions = new MarkerOptions();
+        markerOptions.position(new LatLng(35.233903, 129.079871))
+                .title("cat2")
+                .snippet("반가워요")
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.cat1));
+        mMap.addMarker(markerOptions);
 
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(PNU, 15));
 
@@ -74,7 +85,6 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onMyLocationButtonClick() {
-        Toast.makeText(this, "MyLoc Btn", Toast.LENGTH_SHORT).show();
         return false;
     }
 
