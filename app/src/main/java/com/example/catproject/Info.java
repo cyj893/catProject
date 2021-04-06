@@ -7,14 +7,16 @@ public class Info {
 
     public String catName;
     public String type;
+    public String img;
 
     public Info() {
         // Default constructor required for calls to DataSnapshot.getValue(User.class)
     }
 
-    public Info(String catName, String type) {
+    public Info(String catName, String type, String img) {
         this.catName = catName;
         this.type = type;
+        this.img = img;
     }
 
     public String getCatName() {
@@ -33,11 +35,8 @@ public class Info {
         this.type = type;
     }
 
-    @Override
-    public String toString() {
-        return "Info{" +
-                "catName='" + catName + '\'' +
-                ", type='" + type + '\'' +
-                '}';
-    }
+    public String getImg() { return img; }
+
+    public void setImg(String img) { this.img = img; }
+
 }

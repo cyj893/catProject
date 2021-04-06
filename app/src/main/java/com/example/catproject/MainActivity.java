@@ -2,25 +2,38 @@ package com.example.catproject;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.res.ResourcesCompat;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.ActionCodeSettings;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.storage.FirebaseStorage;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
+import java.util.Map;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -56,10 +69,15 @@ public class MainActivity extends AppCompatActivity {
                 String getCatName = et_info_name.getText().toString();
                 String getType = et_info_type.getText().toString();
 
+                Drawable img = getResources().getDrawable(R.drawable.cat1);
+                Bitmap bitmap = ((BitmapDrawable)img).getBitmap();
+                String simg = BitmapToString(bitmap);
+
                 //hashmap 만들기
                 HashMap result = new HashMap<>();
                 result.put("name", getCatName);
                 result.put("type", getType);
+                result.put("img", simg);
 
                 mDatabase.collection("catinfo")
                         .add(result)
@@ -91,6 +109,13 @@ public class MainActivity extends AppCompatActivity {
                                 if( task.isSuccessful() ){
                                     for(QueryDocumentSnapshot document : task.getResult()){
                                         Log.d("SHOW", document.getId() + " => " + document.getData());
+                                        Map<String, Object> getDB = document.getData();
+                                        if( getDB.containsKey("img") ){
+                                            String simg = getDB.get("img").toString();
+                                            Bitmap bm = StringToBitmap(simg);
+                                            ImageView imageView = (ImageView)findViewById(R.id.imageView);
+                                            imageView.setImageBitmap(bm);
+                                        }
                                     }
                                 }
                                 else{
@@ -101,6 +126,38 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+
     }
 
+
+    public static Bitmap StringToBitmap(String encodedString) {
+        try {
+            byte[] encodeByte = Base64.decode(encodedString, Base64.DEFAULT);
+            Bitmap bitmap = BitmapFactory.decodeByteArray(encodeByte, 0, encodeByte.length);
+            return bitmap;
+        } catch (Exception e) {
+            e.getMessage();
+            return null;
+        }
+    }
+
+    /*
+     * Bitmap을 String형으로 변환
+     * */
+    public static String BitmapToString(Bitmap bitmap) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 70, baos);
+        byte[] bytes = baos.toByteArray();
+        String temp = Base64.encodeToString(bytes, Base64.DEFAULT);
+        return temp;
+    }
+
+    /*
+     * Bitmap을 byte배열로 변환
+     * */
+    public static byte[] BitmapToByteArray(Bitmap bitmap) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 70, baos);
+        return baos.toByteArray();
+    }
 }
