@@ -24,6 +24,8 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.ActionCodeSettings;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -34,6 +36,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -127,9 +130,46 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+
+        Button btn_auth = (Button)findViewById(R.id.btn_auth);
+        btn_auth.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ActionCodeSettings actionCodeSettings =
+                        ActionCodeSettings.newBuilder()
+                                // URL you want to redirect back to. The domain (www.example.com) for this
+                                // URL must be whitelisted in the Firebase Console.
+                                .setUrl("https://catproject.page.link/63fF")
+                                // This must be true
+                                .setHandleCodeInApp(true)
+                                .setAndroidPackageName(
+                                        "com.example.catproject",
+                                        false, /* installIfNotAvailable */
+                                        "12"    /* minimumVersion */)
+                                .build();
+                String email = "cyj89317@naver.com";
+                FirebaseAuth auth = FirebaseAuth.getInstance();
+                Log.d("EMAIL", "getInstance.");
+                auth.sendSignInLinkToEmail(email, actionCodeSettings)
+                        .addOnCompleteListener(new OnCompleteListener<Void>() {
+                            @Override
+                            public void onComplete(@NonNull Task<Void> task) {
+                                if (task.isSuccessful()) {
+                                    Log.d("EMAIL", "Email sent.");
+                                }
+                                else{
+                                    Objects.requireNonNull (task.getException ()). printStackTrace ();}
+                            }
+                        });
+
+            }
+        });
+
     }
 
-
+    /*
+     * String을 Bitmap으로 변환
+     * */
     public static Bitmap StringToBitmap(String encodedString) {
         try {
             byte[] encodeByte = Base64.decode(encodedString, Base64.DEFAULT);
@@ -146,18 +186,44 @@ public class MainActivity extends AppCompatActivity {
      * */
     public static String BitmapToString(Bitmap bitmap) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.PNG, 70, baos);
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 70, baos);
         byte[] bytes = baos.toByteArray();
         String temp = Base64.encodeToString(bytes, Base64.DEFAULT);
         return temp;
     }
 
-    /*
-     * Bitmap을 byte배열로 변환
-     * */
-    public static byte[] BitmapToByteArray(Bitmap bitmap) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 70, baos);
-        return baos.toByteArray();
+
+
+
+    public void verifyEmailLink(){
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        Intent intent = getIntent();
+        String emailLink = intent.getData().toString();
+
+        // Confirm the link is a sign-in with email link.
+        if (auth.isSignInWithEmailLink(emailLink)) {
+            // Retrieve this from wherever you stored it
+            String email = "cyj89317@naver.com";
+
+            // The client SDK will parse the code from the link for you.
+            auth.signInWithEmailLink(email, emailLink)
+                    .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                        @Override
+                        public void onComplete(@NonNull Task<AuthResult> task) {
+                            if (task.isSuccessful()) {
+                                Log.d("SIGNIN", "Successfully signed in with email link!");
+                                AuthResult result = task.getResult();
+                                // You can access the new user via result.getUser()
+                                // Additional user info profile *not* available via:
+                                // result.getAdditionalUserInfo().getProfile() == null
+                                // You can check if the user is new or existing:
+                                // result.getAdditionalUserInfo().isNewUser()
+                            } else {
+                                Log.e("SIGNIN", "Error signing in with email link", task.getException());
+                            }
+                        }
+                    });
+        }
+
     }
 }
