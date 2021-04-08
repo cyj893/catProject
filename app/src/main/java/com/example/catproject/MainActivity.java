@@ -9,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
@@ -26,6 +27,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.ActionCodeSettings;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.dynamiclinks.FirebaseDynamicLinks;
+import com.google.firebase.dynamiclinks.PendingDynamicLinkData;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -48,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        verifyEmailLink();
         mDatabase = FirebaseFirestore.getInstance();
 
         Button btn_map = (Button)findViewById(R.id.btn_map);
@@ -196,14 +200,26 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void verifyEmailLink(){
+
+        Log.d("DYNAMIC", "getDynamicLink start");
+
         FirebaseAuth auth = FirebaseAuth.getInstance();
         Intent intent = getIntent();
-        String emailLink = intent.getData().toString();
+        String emailLink = "";
+        if( intent.getData() != null ){
+            emailLink = intent.getData().toString();
+            Log.d("DYNAMIC", "INTENT: "+emailLink);
+        }
+        else{
+            Log.d("DYNAMIC", "No INTENT");
+            return;
+        }
 
         // Confirm the link is a sign-in with email link.
         if (auth.isSignInWithEmailLink(emailLink)) {
             // Retrieve this from wherever you stored it
             String email = "cyj89317@naver.com";
+            Log.d("DYNAMIC", "START confirm");
 
             // The client SDK will parse the code from the link for you.
             auth.signInWithEmailLink(email, emailLink)
@@ -225,5 +241,6 @@ public class MainActivity extends AppCompatActivity {
                     });
         }
 
+        Log.d("DYNAMIC", "func end");
     }
 }
