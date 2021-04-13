@@ -4,8 +4,11 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.location.Location;
 import android.os.Bundle;
+import android.util.Log;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -19,10 +22,18 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
+
+import java.util.Map;
 
 public class showMap extends AppCompatActivity
-        implements OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener, GoogleMap.OnMyLocationClickListener {
+        implements OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener, GoogleMap.OnMyLocationClickListener, GoogleMap.OnMarkerClickListener {
 
     private GoogleMap mMap;
 
@@ -49,20 +60,7 @@ public class showMap extends AppCompatActivity
 
         LatLng PNU = new LatLng(35.233903, 129.079871);
 
-        MarkerOptions markerOptions = new MarkerOptions();
-
-        markerOptions.position(new LatLng(35.231561, 129.082566))
-                .title("cat1")
-                .snippet("반가워요")
-                .icon(BitmapDescriptorFactory.fromResource(R.drawable.cat1));
-        mMap.addMarker(markerOptions);
-
-        markerOptions = new MarkerOptions();
-        markerOptions.position(new LatLng(35.233903, 129.079871))
-                .title("cat2")
-                .snippet("반가워요")
-                .icon(BitmapDescriptorFactory.fromResource(R.drawable.cat1));
-        mMap.addMarker(markerOptions);
+        setMarkersFromDB();
 
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(PNU, 15));
 
@@ -95,5 +93,44 @@ public class showMap extends AppCompatActivity
     public void onMyLocationClick(@NonNull Location location) {
         Toast.makeText(this, "Current: "+location, Toast.LENGTH_LONG).show();
 
+    }
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        Intent intent = new Intent(getApplicationContext(), showCatInfo.class);
+        intent.putExtra("catName", marker.getTitle());
+        startActivity(intent);
+        return true;
+    }
+
+    public void setMarkersFromDB(){ // DB에서 정보 들고 와서 마커 보여주기
+        FirebaseFirestore mDatabase;
+        mDatabase = FirebaseFirestore.getInstance();
+        mDatabase.collection("catinfo")
+                .get()
+                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                        if( task.isSuccessful() ){
+                            for(QueryDocumentSnapshot document : task.getResult()){
+                                Log.d("SHOW", document.getId() + " => " + document.getData());
+                                Map<String, Object> getDB = document.getData();
+                                String catName = document.getId();
+                                double latitude = Double.parseDouble(getDB.get("latitude").toString());
+                                double longitude = Double.parseDouble(getDB.get("longitude").toString());
+                                MarkerOptions markerOptions = new MarkerOptions();
+
+                                markerOptions.position(new LatLng(latitude, longitude))
+                                        .title("catName")
+                                        .snippet("반가워요")
+                                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.cat1));
+                                mMap.addMarker(markerOptions);
+                            }
+                        }
+                        else{
+                            Log.d("SHOW", "Error show DB", task.getException());
+                        }
+                    }
+                });
     }
 }

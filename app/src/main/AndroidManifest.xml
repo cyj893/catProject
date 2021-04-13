@@ -37,6 +37,7 @@
             </intent-filter>
         </activity>-->
         <activity android:name=".showMap" />
+        <activity android:name=".showCatInfo" />
     </application>
 
 </manifest>
