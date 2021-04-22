@@ -24,7 +24,6 @@ public class showCatInfo extends AppCompatActivity {
     private FirebaseFirestore mDatabase;
     TextView textViewName;
     TextView textViewFeatures;
-    ImageView imageView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,7 +37,6 @@ public class showCatInfo extends AppCompatActivity {
 
         textViewName = findViewById(R.id.show_name);
         textViewFeatures = findViewById(R.id.show_features);
-        imageView = (ImageView)findViewById(R.id.imageView);
 
         textViewName.setText(catName);
 
@@ -54,15 +52,16 @@ public class showCatInfo extends AppCompatActivity {
                             String features = getDB.get("features").toString();
                             Log.d("SHOW", catName + " => " + features);
                             textViewFeatures.setText(features);
-                            if( getDB.containsKey("img1") ){
-//                                String simg = getDB.get("img1").toString();
-//                                Log.d("SHOW", "img1 => " + simg);
-//                                Bitmap bm = StringToBitmap(simg);
-//                                imageView.setImageBitmap(bm);
+                            int num = Integer.parseInt(getDB.get("num").toString());
+
+                            for(int i = 1; i < num+1; i++){
+                                String key = "img" + i;
+                                String simg = getDB.get(key).toString();
+                                Bitmap bm = Info.StringToBitmap(simg);
+                                ImageView imageView = (ImageView)findViewById(R.id.imageView);
+                                imageView.setImageBitmap(bm);
                             }
-                            else{
-                                ;
-                            }
+
                         }
                         else{
                             Log.d("SHOW", "Error show DB", task.getException());
@@ -73,17 +72,7 @@ public class showCatInfo extends AppCompatActivity {
 
     }
 
-    public static Bitmap StringToBitmap(String encodedString) {
-        try {
-            byte[] encodeByte = Base64.decode(encodedString, Base64.DEFAULT);
-            Bitmap bitmap = BitmapFactory.decodeByteArray(encodeByte, 0, encodeByte.length);
 
-            Log.d("IMG", encodeByte.toString());
-            return bitmap;
-        } catch (Exception e) {
-            e.getMessage();
-            return null;
-        }
-    }
+
 
 }

@@ -30,9 +30,11 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.dynamiclinks.FirebaseDynamicLinks;
 import com.google.firebase.dynamiclinks.PendingDynamicLinkData;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.storage.FirebaseStorage;
 
 import java.io.ByteArrayInputStream;
@@ -101,6 +103,19 @@ public class MainActivity extends AppCompatActivity {
                             }
                         });
 
+
+
+//                Drawable img = getResources().getDrawable(R.drawable.cat1);
+//                Bitmap bitmap = ((BitmapDrawable)img).getBitmap();
+//                String simg = BitmapToString(bitmap);
+//
+//                //hashmap 만들기
+//                HashMap result = new HashMap<>();
+//                result.put("img1", simg);
+//
+//                mDatabase.collection("catIMG")
+//                        .document("치즈")
+//                        .set(result, SetOptions.merge());
             }
         });
 
