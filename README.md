@@ -27,7 +27,9 @@ Dynamic Link 사용. 이메일 링크 클릭하면 앱으로 연결 가능
 성공, ImageView 없어서 그랬음
 
 *DB에서 catinfo와 catIMG 구분해 놓음*
+
 catinfo는 마커 표시에 필요한 최소 정보들 - 현재 위치(위도 경도), 이름, 타입
+
 catIMG는 showCatInfo탭에서 필요한 정보들 - num(이미지 개수), img1~, features
 
 다음 목표:
