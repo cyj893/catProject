@@ -79,7 +79,7 @@ public class showMap extends AppCompatActivity
         mMap.setMyLocationEnabled(true);
         mMap.setOnMyLocationButtonClickListener(this);
         mMap.setOnMyLocationClickListener(this);
-
+        mMap.setOnMarkerClickListener(this);
 
 
     }
@@ -97,8 +97,10 @@ public class showMap extends AppCompatActivity
 
     @Override
     public boolean onMarkerClick(Marker marker) {
+        Log.d("Marker", "marker clicked");
         Intent intent = new Intent(getApplicationContext(), showCatInfo.class);
         intent.putExtra("catName", marker.getTitle());
+        Log.d("Marker", "send intent");
         startActivity(intent);
         return true;
     }
@@ -113,17 +115,18 @@ public class showMap extends AppCompatActivity
                     public void onComplete(@NonNull Task<QuerySnapshot> task) {
                         if( task.isSuccessful() ){
                             for(QueryDocumentSnapshot document : task.getResult()){
-                                Log.d("SHOW", document.getId() + " => " + document.getData());
                                 Map<String, Object> getDB = document.getData();
-                                String catName = document.getId();
+                                String catName = getDB.get("name").toString();
+                                String type = getDB.get("type").toString();
                                 double latitude = Double.parseDouble(getDB.get("latitude").toString());
                                 double longitude = Double.parseDouble(getDB.get("longitude").toString());
-                                MarkerOptions markerOptions = new MarkerOptions();
+                                Log.d("GETDB", catName);
 
+                                MarkerOptions markerOptions = new MarkerOptions();
                                 markerOptions.position(new LatLng(latitude, longitude))
-                                        .title("catName")
+                                        .title(catName)
                                         .snippet("반가워요")
-                                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.cat1));
+                                        .icon(BitmapDescriptorFactory.fromResource(getResources().getIdentifier(type,"drawable",getPackageName())));
                                 mMap.addMarker(markerOptions);
                             }
                         }

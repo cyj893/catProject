@@ -2,7 +2,9 @@ package com.example.catproject;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -20,20 +22,28 @@ import java.util.Map;
 public class showCatInfo extends AppCompatActivity {
 
     private FirebaseFirestore mDatabase;
+    TextView textViewName;
+    TextView textViewFeatures;
+    ImageView imageView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_show_catinfo);
 
+
+        Log.d("Marker", "get intent");
         Intent intent = getIntent();
         String catName = intent.getStringExtra("catName");
-        TextView textView = findViewById(R.id.show_name);
-        textView.setText(catName);
-        String docPath = "catinfo/" + catName;
+
+        textViewName = findViewById(R.id.show_name);
+        textViewFeatures = findViewById(R.id.show_features);
+        imageView = (ImageView)findViewById(R.id.imageView);
+
+        textViewName.setText(catName);
 
         mDatabase = FirebaseFirestore.getInstance();
-
+        String docPath = "catIMG/" + catName;
         mDatabase.document(docPath)
                 .get()
                 .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
@@ -41,13 +51,14 @@ public class showCatInfo extends AppCompatActivity {
                     public void onComplete(@NonNull Task<DocumentSnapshot> task) {
                         if( task.isSuccessful() ){
                             Map<String, Object> getDB = task.getResult().getData();
-                            String old = getDB.get("old").toString();
                             String features = getDB.get("features").toString();
-                            if( getDB.containsKey("img") ){
-                                String simg = getDB.get("img").toString();
-                                Bitmap bm = Info.StringToBitmap(simg);
-                                ImageView imageView = (ImageView)findViewById(R.id.imageView);
-                                imageView.setImageBitmap(bm);
+                            Log.d("SHOW", catName + " => " + features);
+                            textViewFeatures.setText(features);
+                            if( getDB.containsKey("img1") ){
+//                                String simg = getDB.get("img1").toString();
+//                                Log.d("SHOW", "img1 => " + simg);
+//                                Bitmap bm = StringToBitmap(simg);
+//                                imageView.setImageBitmap(bm);
                             }
                             else{
                                 ;
@@ -60,6 +71,19 @@ public class showCatInfo extends AppCompatActivity {
                 });
 
 
+    }
+
+    public static Bitmap StringToBitmap(String encodedString) {
+        try {
+            byte[] encodeByte = Base64.decode(encodedString, Base64.DEFAULT);
+            Bitmap bitmap = BitmapFactory.decodeByteArray(encodeByte, 0, encodeByte.length);
+
+            Log.d("IMG", encodeByte.toString());
+            return bitmap;
+        } catch (Exception e) {
+            e.getMessage();
+            return null;
+        }
     }
 
 }
