@@ -49,9 +49,6 @@ public class showMap extends AppCompatActivity
         mapFragment.getMapAsync(this);
 
         Intent intent = getIntent();
-        String msg = intent.getStringExtra("msg");
-        TextView textView = findViewById(R.id.show_msg);
-        textView.setText(msg);
     }
 
     @SuppressLint("MissingPermission")

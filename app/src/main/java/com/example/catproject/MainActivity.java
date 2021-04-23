@@ -43,6 +43,7 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -76,7 +77,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(getApplicationContext(), showMap.class);
-                intent.putExtra("msg", "I'll show");
                 startActivity(intent);
             }
         });
@@ -173,7 +173,6 @@ public class MainActivity extends AppCompatActivity {
         return bm;
     }
 
-
     public void getImgFromAlbum() {
             Intent intent = new Intent();
             intent.setType("image/*");
@@ -210,6 +209,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+
 
 
 //        Button btn_auth = (Button)findViewById(R.id.btn_auth);
