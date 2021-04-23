@@ -3,22 +3,16 @@ package com.example.catproject;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.res.ResourcesCompat;
 
 import android.Manifest;
 import android.content.ClipData;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.ImageDecoder;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.provider.MediaStore;
-import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -26,49 +20,55 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.ActionCodeSettings;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.dynamiclinks.FirebaseDynamicLinks;
-import com.google.firebase.dynamiclinks.PendingDynamicLinkData;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
-import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 
 public class MainActivity extends AppCompatActivity {
 
     private FirebaseFirestore mDatabase;
     private ImageView imageView;
-    private ArrayList<Bitmap> mArrayBM;
+    private ArrayList<Uri> mArrayUri;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        FirebaseAuth mAuth = FirebaseAuth.getInstance();
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        mAuth.signInAnonymously()
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            // Sign in success, update UI with the signed-in user's information
+                            Log.d("LOGIN", "signInAnonymously:success");
+                            FirebaseUser user = mAuth.getCurrentUser();
+                        } else {
+                            // If sign in fails, display a message to the user.
+                            Log.w("LOGIN", "signInAnonymously:failure", task.getException());
+                        }
+                    }
+                });
 
         //verifyEmailLink();
         mDatabase = FirebaseFirestore.getInstance();
-        mArrayBM = new ArrayList<>();
 
 
         imageView = (ImageView)findViewById(R.id.imageView);
@@ -149,6 +149,7 @@ public class MainActivity extends AppCompatActivity {
                     // for ActivityCompat#requestPermissions for more details.
                     return;
                 }
+
                 getImgFromAlbum();
             }
         });
@@ -156,22 +157,6 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-
-
-    public Bitmap UriToBitmap(Uri imageuri){
-        Bitmap bm = null;
-        try{
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P){
-                bm = ImageDecoder.decodeBitmap(ImageDecoder.createSource(getContentResolver(), imageuri));
-            }
-            else {
-                bm = MediaStore.Images.Media.getBitmap(getContentResolver(), imageuri);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return bm;
-    }
 
     public void getImgFromAlbum() {
             Intent intent = new Intent();
@@ -184,25 +169,23 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        mArrayUri = new ArrayList<>();
+
         if (requestCode == 0 && resultCode == RESULT_OK && data != null) {
             // Get the Image from data
             if (data.getClipData() != null) {
                 ClipData mClipData = data.getClipData();
                 int cnt = mClipData.getItemCount();
                 for (int i = 0; i < cnt; i++) {
-                    // adding imageuri in array
                     Uri imageuri = mClipData.getItemAt(i).getUri();
-                    Bitmap bm = UriToBitmap(imageuri);
-                    if( bm != null ) mArrayBM.add(bm);
+                    mArrayUri.add(imageuri);
                 }
-                imageView.setImageBitmap(mArrayBM.get(0));
             }
             else {
                 Uri imageuri = data.getData();
-                Bitmap bm = UriToBitmap(imageuri);
-                if( bm != null ) mArrayBM.add(bm);
-                imageView.setImageBitmap(mArrayBM.get(0));
+                mArrayUri.add(imageuri);
             }
+            uploadFile();
         }
         else{
             Toast.makeText(this, "사진 선택 취소", Toast.LENGTH_LONG).show();
@@ -211,6 +194,59 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    //upload the file
+    private void uploadFile() {
+        if (mArrayUri != null) {
+            FirebaseStorage storage = FirebaseStorage.getInstance();
+
+            final int[] num = {0};
+            String catName = "blackcat";
+            String docPath = "catIMG/" + catName;
+            mDatabase.document(docPath)
+                    .get()
+                    .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                        @Override
+                        public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                            if( task.isSuccessful() ){
+                                Map<String, Object> getDB = task.getResult().getData();
+                                num[0] = Integer.parseInt(getDB.get("num").toString());
+
+                                for(int i = 0; i < mArrayUri.size(); i++){
+                                    Uri filePath = mArrayUri.get(i);
+                                    String filename = (++num[0]) + ".jpg";
+                                    StorageReference storageRef = storage.getReferenceFromUrl("gs://catproj.appspot.com/").child( catName + "/" + filename);
+                                    storageRef.putFile(filePath)
+                                            .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                                                @Override
+                                                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                                                    Toast.makeText(getApplicationContext(), "업로드 완료!", Toast.LENGTH_SHORT).show();
+                                                }
+                                            })
+                                            .addOnFailureListener(new OnFailureListener() {
+                                                @Override
+                                                public void onFailure(@NonNull Exception e) {
+                                                    Toast.makeText(getApplicationContext(), "업로드 실패!", Toast.LENGTH_SHORT).show();
+                                                }
+                                            })
+                                            .addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+                                                @Override
+                                                public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
+                                                    @SuppressWarnings("VisibleForTests")
+                                                    double progress = (100 * taskSnapshot.getBytesTransferred()) / taskSnapshot.getTotalByteCount();
+                                                }
+                                            });
+                                }
+                                mDatabase.document(docPath).update("num", num[0]);
+                            }
+                            else{
+                                Log.d("SHOW", "Error show DB", task.getException());
+                            }
+                        }
+                    });
+        } else {
+            Toast.makeText(getApplicationContext(), "파일을 먼저 선택하세요.", Toast.LENGTH_SHORT).show();
+        }
+    }
 
 //        Button btn_auth = (Button)findViewById(R.id.btn_auth);
 //        btn_auth.setOnClickListener(new View.OnClickListener() {
