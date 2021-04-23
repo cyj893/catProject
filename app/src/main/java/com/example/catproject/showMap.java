@@ -36,6 +36,8 @@ public class showMap extends AppCompatActivity
         implements OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener, GoogleMap.OnMyLocationClickListener, GoogleMap.OnMarkerClickListener {
 
     private GoogleMap mMap;
+    private int clickedcnt = 0;
+    private String clickedname = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,17 +94,29 @@ public class showMap extends AppCompatActivity
     @Override
     public void onMyLocationClick(@NonNull Location location) {
         Toast.makeText(this, "Current: "+location, Toast.LENGTH_LONG).show();
-
     }
 
     @Override
     public boolean onMarkerClick(Marker marker) {
         Log.d("Marker", "marker clicked");
-        Intent intent = new Intent(getApplicationContext(), showCatInfo.class);
-        intent.putExtra("catName", marker.getTitle());
-        Log.d("Marker", "send intent");
-        startActivity(intent);
-        return true;
+
+        if( clickedcnt == 0 ){
+            clickedname = marker.getTitle();
+            clickedcnt++;
+        }
+        else if( clickedname.equals(marker.getTitle()) ){
+            clickedname = "";
+            clickedcnt = 0;
+            Intent intent = new Intent(getApplicationContext(), showCatInfo.class);
+            intent.putExtra("catName", marker.getTitle());
+            Log.d("Marker", "send intent");
+            startActivity(intent);
+        }
+        else{
+            clickedname = marker.getTitle();
+        }
+
+        return false;
     }
 
     public void setMarkersFromDB(){ // DB에서 정보 들고 와서 마커 보여주기
