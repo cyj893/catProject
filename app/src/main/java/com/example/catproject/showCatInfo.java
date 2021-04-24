@@ -7,6 +7,7 @@ import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -32,6 +33,7 @@ public class showCatInfo extends AppCompatActivity {
     Button btn_goMain;
     Button btn_edit;
     public RecyclerView mRecyclerView;
+    View noInfo;
     ArrayList<Uri> mArrayUri;
 
     @Override
@@ -45,14 +47,18 @@ public class showCatInfo extends AppCompatActivity {
 
 
         mRecyclerView = (RecyclerView)findViewById(R.id.recyclerView);
+        noInfo = (LinearLayout)findViewById(R.id.noInfo);
         textViewName = findViewById(R.id.show_name);
-        textViewName.setMovementMethod(new ScrollingMovementMethod());
         textViewFeatures = findViewById(R.id.show_features);
-        textViewFeatures.setMovementMethod(new ScrollingMovementMethod());
         btn_goMain = findViewById(R.id.btn_goMain);
         btn_edit = findViewById(R.id.btn_edit);
-        mArrayUri = new ArrayList<>();
 
+        textViewName.setMovementMethod(new ScrollingMovementMethod());
+        textViewFeatures.setMovementMethod(new ScrollingMovementMethod());
+        noInfo.setVisibility(View.VISIBLE);
+        mRecyclerView.setVisibility(View.INVISIBLE);
+
+        mArrayUri = new ArrayList<>();
         StaggeredGridLayoutManager manager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
         mRecyclerView.setLayoutManager(manager);
 
@@ -79,13 +85,14 @@ public class showCatInfo extends AppCompatActivity {
                             mRecyclerView.setAdapter(mCustomImageAdapter);
 
                             for(int i = 1; i < num + 1; i++){
-
                                 String filename = i + ".jpg";
                                 Log.d("GETURI", catName + "/" + filename);
                                 storageRef.child(catName + "/" + filename).getDownloadUrl().addOnCompleteListener(new OnCompleteListener<Uri>() {
                                     @Override
                                     public void onComplete(@NonNull Task<Uri> task) {
                                         if(task.isSuccessful()){
+                                            noInfo.setVisibility(View.INVISIBLE);
+                                            mRecyclerView.setVisibility(View.VISIBLE);
                                             mArrayUri.add(task.getResult());
                                             Log.d("GETURI!!", "Success");
                                             mCustomImageAdapter.notifyDataSetChanged();
@@ -120,16 +127,21 @@ public class showCatInfo extends AppCompatActivity {
         });
 
 
-//        mRecyclerView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//            @Override
-//            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-//                Toast.makeText(getApplicationContext(), mCustomImageAdapter.getItemPath(position), Toast.LENGTH_LONG).show();
-//            }
-//        });
+        mCustomImageAdapter.setOnItemClickListener(new CustomImageAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(View view, int position) {
+                Log.d("CLICKED", "clicked");
+                mArrayUri.get(position);
+            }
+        });
 
 
 
     }
+
+
+
+
 
 
 

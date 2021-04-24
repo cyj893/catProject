@@ -129,15 +129,27 @@ public class showAlbum extends AppCompatActivity {
         });
 
 
+        mCustomImageAdapter.setOnItemClickListener(new CustomImageAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(View view, int position) {
+                Log.d("CLICKED2", "clicked " + IndexArray[position]);
+
+                Intent intent = new Intent(getApplicationContext(), showCatInfo.class);
+                intent.putExtra("catName", IndexArray[position].toString());
+                Log.d("Album", "send intent");
+                startActivity(intent);
+            }
+        });
+
     }
 
     public void searchName(){
         noInfo.setVisibility(View.INVISIBLE);
-        mRecyclerView.setVisibility(View.VISIBLE);
         String searchName = editText.getText().toString();
         if( searchName.equals("") ){
             mCustomImageAdapter.setArrayUri(mArrayUri);
             mCustomImageAdapter.notifyDataSetChanged();
+            mRecyclerView.setVisibility(View.VISIBLE);
             return;
         }
         String docPath = "catImgNum/names";
@@ -159,6 +171,7 @@ public class showAlbum extends AppCompatActivity {
                                 }
                                 mCustomImageAdapter.setArrayUri(catNameUri);
                                 mCustomImageAdapter.notifyDataSetChanged();
+                                mRecyclerView.setVisibility(View.VISIBLE);
                             }
                             else{
                                 noInfo.setVisibility(View.VISIBLE);

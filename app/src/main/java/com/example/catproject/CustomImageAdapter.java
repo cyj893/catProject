@@ -36,6 +36,11 @@ public class CustomImageAdapter extends RecyclerView.Adapter<CustomImageAdapter.
         return mArrayUri.size();
     }
 
+    @Override
+    public int getItemViewType(int position) {
+        return position;
+    }
+
     class ViewHolder extends RecyclerView.ViewHolder{
 
         ImageView image;
@@ -43,6 +48,17 @@ public class CustomImageAdapter extends RecyclerView.Adapter<CustomImageAdapter.
         ViewHolder(View itemView) {
             super(itemView);
             image = (ImageView) itemView.findViewById(R.id.imageView);
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    int pos = getAdapterPosition() ;
+                    if( pos != RecyclerView.NO_POSITION ){
+                        if( mListener != null ) {
+                            mListener.onItemClick(v, pos);
+                        }
+                    }
+                }
+            });
         }
     }
 
@@ -59,6 +75,17 @@ public class CustomImageAdapter extends RecyclerView.Adapter<CustomImageAdapter.
         Glide.with(mContext).load(mArrayUri.get(position)).into(holder.image);
 
         Log.d("GRID", "send imgview");
+    }
+
+
+    public interface OnItemClickListener {
+        void onItemClick(View v, int position);
+    }
+
+    private OnItemClickListener mListener = null;
+
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        this.mListener = listener;
     }
 
 }
