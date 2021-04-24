@@ -18,16 +18,18 @@ import java.util.ArrayList;
 
 public class CustomImageAdapter extends RecyclerView.Adapter<CustomImageAdapter.ViewHolder> {
     private FirebaseFirestore mDatabase;
-    ArrayList<Uri> mArrayUri;
     int itemLayout;
     Context mContext;
+    ArrayList<Uri> mArrayUri;
 
-    public String TAG = "Gallery Adapter Example :: ";
-
-    public CustomImageAdapter(int itemLayout, Context context){
+    public CustomImageAdapter(int itemLayout, Context context, ArrayList<Uri> mArrayUri){
         this.itemLayout = itemLayout;
         this.mContext = context;
-        mArrayUri = new ArrayList<>();
+        this.mArrayUri = mArrayUri;
+    }
+
+    public void setArrayUri(ArrayList<Uri> mArrayUri){
+        this.mArrayUri = mArrayUri;
     }
 
     @Override public int getItemCount() {

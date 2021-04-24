@@ -90,35 +90,36 @@ public class MainActivity extends AppCompatActivity {
         btn_save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String getCatName = et_info_name.getText().toString();
-                String getType = et_info_type.getText().toString();
+//                String getCatName = et_info_name.getText().toString();
+//                String getType = et_info_type.getText().toString();
+//
+//                Drawable img = getResources().getDrawable(R.drawable.cat1);
+//                Bitmap bitmap = ((BitmapDrawable)img).getBitmap();
+//                String simg = Info.BitmapToString(bitmap);
+//
+//                //hashmap 만들기
+//                HashMap result = new HashMap<>();
+//                result.put("name", getCatName);
+//                result.put("type", getType);
+//                result.put("img", simg);
+//
+//                mDatabase.collection("catinfo")
+//                        .add(result)
+//                        .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+//                            @Override
+//                            public void onSuccess(DocumentReference documentReference) {
+//                                Log.d("ADD","Document added ID: "+documentReference.getId());
+//                            }
+//                        })
+//                        .addOnFailureListener(new OnFailureListener() {
+//                            @Override
+//                            public void onFailure(@NonNull Exception e) {
+//                                Log.d("ADD","Error adding: ",e);
+//                            }
+//                        });
 
-                Drawable img = getResources().getDrawable(R.drawable.cat1);
-                Bitmap bitmap = ((BitmapDrawable)img).getBitmap();
-                String simg = Info.BitmapToString(bitmap);
-
-                //hashmap 만들기
-                HashMap result = new HashMap<>();
-                result.put("name", getCatName);
-                result.put("type", getType);
-                result.put("img", simg);
-
-                mDatabase.collection("catinfo")
-                        .add(result)
-                        .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-                            @Override
-                            public void onSuccess(DocumentReference documentReference) {
-                                Log.d("ADD","Document added ID: "+documentReference.getId());
-                            }
-                        })
-                        .addOnFailureListener(new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                Log.d("ADD","Error adding: ",e);
-                            }
-                        });
-
-
+                Intent intent = new Intent(getApplicationContext(), showAlbum.class);
+                startActivity(intent);
 
 //                Drawable img = getResources().getDrawable(R.drawable.cat1);
 //                Bitmap bitmap = ((BitmapDrawable)img).getBitmap();

@@ -21,6 +21,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 public class showCatInfo extends AppCompatActivity {
@@ -31,13 +32,14 @@ public class showCatInfo extends AppCompatActivity {
     Button btn_goMain;
     Button btn_edit;
     public RecyclerView mRecyclerView;
+    ArrayList<Uri> mArrayUri;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_show_catinfo);
 
-        Log.d("Marker", "get intent");
+        Log.d("CatInfo", "get intent");
         Intent intent = getIntent();
         String catName = intent.getStringExtra("catName");
 
@@ -49,11 +51,12 @@ public class showCatInfo extends AppCompatActivity {
         textViewFeatures.setMovementMethod(new ScrollingMovementMethod());
         btn_goMain = findViewById(R.id.btn_goMain);
         btn_edit = findViewById(R.id.btn_edit);
+        mArrayUri = new ArrayList<>();
 
         StaggeredGridLayoutManager manager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
         mRecyclerView.setLayoutManager(manager);
 
-        CustomImageAdapter mCustomImageAdapter = new CustomImageAdapter(R.layout.row, getApplicationContext());
+        CustomImageAdapter mCustomImageAdapter = new CustomImageAdapter(R.layout.row, getApplicationContext(), mArrayUri);
 
         textViewName.setText(catName);
 
@@ -83,7 +86,7 @@ public class showCatInfo extends AppCompatActivity {
                                     @Override
                                     public void onComplete(@NonNull Task<Uri> task) {
                                         if(task.isSuccessful()){
-                                            mCustomImageAdapter.mArrayUri.add(task.getResult());
+                                            mArrayUri.add(task.getResult());
                                             Log.d("GETURI!!", "Success");
                                             mCustomImageAdapter.notifyDataSetChanged();
                                         }
@@ -104,8 +107,7 @@ public class showCatInfo extends AppCompatActivity {
         btn_goMain.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(getApplicationContext(), showMap.class);
-                startActivity(intent);
+                onBackPressed();
             }
         });
 
