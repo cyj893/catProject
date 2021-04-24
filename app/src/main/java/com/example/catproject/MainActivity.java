@@ -1,6 +1,5 @@
 package com.example.catproject;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
@@ -8,10 +7,8 @@ import android.Manifest;
 import android.content.ClipData;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -20,31 +17,22 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.UploadTask;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 
 
 public class MainActivity extends AppCompatActivity {
 
     private FirebaseFirestore mDatabase;
-    private ImageView imageView;
     private ArrayList<Uri> mArrayUri;
+    ImageView imageView;
+    long num = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,17 +41,12 @@ public class MainActivity extends AppCompatActivity {
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         FirebaseUser currentUser = mAuth.getCurrentUser();
         mAuth.signInAnonymously()
-                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        if (task.isSuccessful()) {
-                            // Sign in success, update UI with the signed-in user's information
-                            Log.d("LOGIN", "signInAnonymously:success");
-                            FirebaseUser user = mAuth.getCurrentUser();
-                        } else {
-                            // If sign in fails, display a message to the user.
-                            Log.w("LOGIN", "signInAnonymously:failure", task.getException());
-                        }
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        Log.d("LOGIN", "signInAnonymously:success");
+                        FirebaseUser user = mAuth.getCurrentUser();
+                    } else {
+                        Log.w("LOGIN", "signInAnonymously:failure", task.getException());
                     }
                 });
 
@@ -71,14 +54,11 @@ public class MainActivity extends AppCompatActivity {
         mDatabase = FirebaseFirestore.getInstance();
 
 
-        imageView = (ImageView)findViewById(R.id.imageView);
-        Button btn_map = (Button)findViewById(R.id.btn_map);
-        btn_map.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(getApplicationContext(), showMap.class);
-                startActivity(intent);
-            }
+        imageView = findViewById(R.id.imageView);
+        Button btn_map = findViewById(R.id.btn_map);
+        btn_map.setOnClickListener(v -> {
+            Intent intent = new Intent(getApplicationContext(), showMap.class);
+            startActivity(intent);
         });
 
         EditText et_info_name,et_info_type;
@@ -86,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
         et_info_type = findViewById(R.id.et_info_type);
 
 
-        Button btn_save = (Button)findViewById(R.id.btn_save);
+        Button btn_save = findViewById(R.id.btn_save);
         btn_save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -135,35 +115,33 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Button btn_showDB = (Button)findViewById(R.id.btn_showDB);
-        btn_showDB.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
-                        && ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                    // TODO: Consider calling
-                    //    ActivityCompat#requestPermissions
-                    // here to request the missing permissions, and then overriding
-                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                    //                                          int[] grantResults)
-                    // to handle the case where the user grants the permission. See the documentation
-                    // for ActivityCompat#requestPermissions for more details.
-                    return;
-                }
-
-                getImgFromAlbum();
+        Button btn_showDB = findViewById(R.id.btn_showDB);
+        btn_showDB.setOnClickListener(v -> {
+            if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+                    && ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return;
             }
+
+            getImgFromAlbum();
         });
 
 
     }
 
-
     public void getImgFromAlbum() {
-            Intent intent = new Intent();
-            intent.setType("image/*");
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-            intent.setAction(Intent.ACTION_GET_CONTENT);
+        }
+        intent.setAction(Intent.ACTION_GET_CONTENT);
             startActivityForResult(intent, 0);
     }
 
@@ -186,7 +164,7 @@ public class MainActivity extends AppCompatActivity {
                 Uri imageuri = data.getData();
                 mArrayUri.add(imageuri);
             }
-            uploadFile();
+            uploadFile("치즈");
         }
         else{
             Toast.makeText(this, "사진 선택 취소", Toast.LENGTH_LONG).show();
@@ -194,56 +172,45 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-
     //upload the file
-    private void uploadFile() {
+    private void uploadFile(String catName) {
         if (mArrayUri != null) {
             FirebaseStorage storage = FirebaseStorage.getInstance();
 
-            final int[] num = {0};
-            String catName = "blackcat";
             String docPath = "catIMG/" + catName;
             mDatabase.document(docPath)
                     .get()
-                    .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-                        @Override
-                        public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                            if( task.isSuccessful() ){
-                                Map<String, Object> getDB = task.getResult().getData();
-                                num[0] = Integer.parseInt(getDB.get("num").toString());
-
-                                for(int i = 0; i < mArrayUri.size(); i++){
-                                    Uri filePath = mArrayUri.get(i);
-                                    String filename = (++num[0]) + ".jpg";
-                                    StorageReference storageRef = storage.getReferenceFromUrl("gs://catproj.appspot.com/").child( catName + "/" + filename);
-                                    storageRef.putFile(filePath)
-                                            .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                                                @Override
-                                                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                                                    Toast.makeText(getApplicationContext(), "업로드 완료!", Toast.LENGTH_SHORT).show();
-                                                }
-                                            })
-                                            .addOnFailureListener(new OnFailureListener() {
-                                                @Override
-                                                public void onFailure(@NonNull Exception e) {
-                                                    Toast.makeText(getApplicationContext(), "업로드 실패!", Toast.LENGTH_SHORT).show();
-                                                }
-                                            })
-                                            .addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
-                                                @Override
-                                                public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
-                                                    @SuppressWarnings("VisibleForTests")
-                                                    double progress = (100 * taskSnapshot.getBytesTransferred()) / taskSnapshot.getTotalByteCount();
-                                                }
-                                            });
-                                }
-                                mDatabase.document(docPath).update("num", num[0]);
+                    .addOnCompleteListener(task -> {
+                        if( task.isSuccessful() ){
+                            Map<String, Object> getDB = task.getResult().getData();
+                            if( getDB == null ){
+                                Log.d("DB Error", "Error get DB no data", task.getException());
+                                return;
                             }
-                            else{
-                                Log.d("SHOW", "Error show DB", task.getException());
+                            Object ob;
+                            if( (ob = getDB.get("num")) != null ){
+                                num = (Long)ob;
                             }
+                            for(int i = 0; i < mArrayUri.size(); i++){
+                                Uri filePath = mArrayUri.get(i);
+                                String filename = (++num) + ".jpg";
+                                StorageReference storageRef = storage.getReferenceFromUrl("gs://catproj.appspot.com/").child( catName + "/" + filename);
+                                storageRef.putFile(filePath)
+                                        .addOnSuccessListener(taskSnapshot -> Toast.makeText(getApplicationContext(), "업로드 완료!", Toast.LENGTH_SHORT).show())
+                                        .addOnFailureListener(e -> Toast.makeText(getApplicationContext(), "업로드 실패!", Toast.LENGTH_SHORT).show())
+                                        .addOnProgressListener(taskSnapshot -> {
+                                            @SuppressWarnings("VisibleForTests")
+                                            double progress = (100 * taskSnapshot.getBytesTransferred()) / taskSnapshot.getTotalByteCount();
+                                        });
+                            }
+                            mDatabase.document(docPath).update("num", num);
+                            mDatabase.document("catImgNum/num").update(catName, num);
+                        }
+                        else{
+                            Log.d("SHOW", "Error show DB", task.getException());
                         }
                     });
+            num = 0;
         } else {
             Toast.makeText(getApplicationContext(), "파일을 먼저 선택하세요.", Toast.LENGTH_SHORT).show();
         }

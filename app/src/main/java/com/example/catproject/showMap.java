@@ -30,36 +30,35 @@ import com.google.firebase.firestore.QuerySnapshot;
 import java.util.Map;
 
 public class showMap extends AppCompatActivity
-        implements OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener, GoogleMap.OnMyLocationClickListener, GoogleMap.OnMarkerClickListener {
+        implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
     private GoogleMap mMap;
+    private FirebaseFirestore mDatabase;
     private int clickedcnt = 0;
-    private String clickedname = "";
+    private String clickedname = "?";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_showmap);
 
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
-
-        Intent intent = getIntent();
-    }
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        if( mapFragment != null ){
+            mapFragment.getMapAsync(this);
+        }
+        mDatabase = FirebaseFirestore.getInstance();
+    } // End onCreate()
 
     @SuppressLint("MissingPermission")
     @Override
     public void onMapReady(final GoogleMap googleMap) {
 
         mMap = googleMap;
-
         LatLng PNU = new LatLng(35.233903, 129.079871);
 
         setMarkersFromDB();
 
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(PNU, 15));
-
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(PNU, 15.5f));
         mMap.getUiSettings().setCompassEnabled(true);
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
@@ -73,23 +72,12 @@ public class showMap extends AppCompatActivity
         }
 
         mMap.setMyLocationEnabled(true);
-        mMap.setOnMyLocationButtonClickListener(this);
-        mMap.setOnMyLocationClickListener(this);
         mMap.setOnMarkerClickListener(this);
+    } // End onMapReady();
 
-
-    }
-
-    @Override
-    public boolean onMyLocationButtonClick() {
-        return false;
-    }
-
-    @Override
-    public void onMyLocationClick(@NonNull Location location) {
-        Toast.makeText(this, "Current: "+location, Toast.LENGTH_LONG).show();
-    }
-
+    /*
+    마커 2번 클릭된 경우 해당 catInfo로 넘어감
+     */
     @Override
     public boolean onMarkerClick(Marker marker) {
         Log.d("Marker", "marker clicked");
@@ -99,7 +87,7 @@ public class showMap extends AppCompatActivity
             clickedcnt++;
         }
         else if( clickedname.equals(marker.getTitle()) ){
-            clickedname = "";
+            clickedname = "?";
             clickedcnt = 0;
             Intent intent = new Intent(getApplicationContext(), showCatInfo.class);
             intent.putExtra("catName", marker.getTitle());
@@ -111,37 +99,46 @@ public class showMap extends AppCompatActivity
         }
 
         return false;
-    }
+    } // End onMarkerClick();
 
-    public void setMarkersFromDB(){ // DB에서 정보 들고 와서 마커 보여주기
-        FirebaseFirestore mDatabase;
-        mDatabase = FirebaseFirestore.getInstance();
+    /*
+    DB에서 정보 들고 와서 마커 보여주기
+     */
+    public void setMarkersFromDB(){
         mDatabase.collection("catinfo")
                 .get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if( task.isSuccessful() ){
-                            for(QueryDocumentSnapshot document : task.getResult()){
-                                Map<String, Object> getDB = document.getData();
-                                String catName = getDB.get("name").toString();
-                                String type = getDB.get("type").toString();
-                                double latitude = Double.parseDouble(getDB.get("latitude").toString());
-                                double longitude = Double.parseDouble(getDB.get("longitude").toString());
-                                Log.d("GETDB", catName);
-
-                                MarkerOptions markerOptions = new MarkerOptions();
-                                markerOptions.position(new LatLng(latitude, longitude))
-                                        .title(catName)
-                                        .snippet("반가워요")
-                                        .icon(BitmapDescriptorFactory.fromResource(getResources().getIdentifier(type,"drawable",getPackageName())));
-                                mMap.addMarker(markerOptions);
+                .addOnCompleteListener(task -> {
+                    if( task.isSuccessful() ){
+                        String catName = "?"; String type = "?";
+                        double latitude = 0.0; double longitude = 0.0;
+                        for(QueryDocumentSnapshot document : task.getResult()){
+                            Map<String, Object> getDB = document.getData();
+                            Object ob;
+                            if( (ob = getDB.get("name")) != null ){
+                                catName = ob.toString();
                             }
-                        }
-                        else{
-                            Log.d("SHOW", "Error show DB", task.getException());
+                            if( (ob = getDB.get("type")) != null ){
+                                type = ob.toString();
+                            }
+                            if( (ob = getDB.get("latitude")) != null ){
+                                latitude = Double.parseDouble(ob.toString());
+                            }
+                            if( (ob = getDB.get("longitude")) != null ){
+                                longitude = Double.parseDouble(ob.toString());
+                            }
+                            Log.d("GETDB", catName);
+                            MarkerOptions markerOptions = new MarkerOptions();
+                            markerOptions.position(new LatLng(latitude, longitude))
+                                    .title(catName)
+                                    .snippet("반가워요")
+                                    .icon(BitmapDescriptorFactory.fromResource(getResources().getIdentifier(type,"drawable",getPackageName())));
+                            mMap.addMarker(markerOptions);
                         }
                     }
+                    else{
+                        Log.d("SHOW", "Error show DB", task.getException());
+                    }
                 });
-    }
+    } // End setMarkersFromDB();
+
 }

@@ -7,17 +7,12 @@ import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -28,13 +23,19 @@ import java.util.Map;
 public class showCatInfo extends AppCompatActivity {
 
     private FirebaseFirestore mDatabase;
+    private StorageReference storageRef;
+    private CustomImageAdapter mCustomImageAdapter;
+
     TextView textViewName;
     TextView textViewFeatures;
     Button btn_goMain;
     Button btn_edit;
-    public RecyclerView mRecyclerView;
+    RecyclerView mRecyclerView;
     View noInfo;
+
     ArrayList<Uri> mArrayUri;
+    long num = 0;
+    String features = "?";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,14 +46,14 @@ public class showCatInfo extends AppCompatActivity {
         Intent intent = getIntent();
         String catName = intent.getStringExtra("catName");
 
-
-        mRecyclerView = (RecyclerView)findViewById(R.id.recyclerView);
-        noInfo = (LinearLayout)findViewById(R.id.noInfo);
+        mRecyclerView = findViewById(R.id.recyclerView);
+        noInfo = findViewById(R.id.noInfo);
         textViewName = findViewById(R.id.show_name);
         textViewFeatures = findViewById(R.id.show_features);
         btn_goMain = findViewById(R.id.btn_goMain);
         btn_edit = findViewById(R.id.btn_edit);
 
+        textViewName.setText(catName);
         textViewName.setMovementMethod(new ScrollingMovementMethod());
         textViewFeatures.setMovementMethod(new ScrollingMovementMethod());
         noInfo.setVisibility(View.VISIBLE);
@@ -61,84 +62,74 @@ public class showCatInfo extends AppCompatActivity {
         mArrayUri = new ArrayList<>();
         StaggeredGridLayoutManager manager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
         mRecyclerView.setLayoutManager(manager);
-
-        CustomImageAdapter mCustomImageAdapter = new CustomImageAdapter(R.layout.row, getApplicationContext(), mArrayUri);
-
-        textViewName.setText(catName);
+        mCustomImageAdapter = new CustomImageAdapter(R.layout.row, getApplicationContext(), mArrayUri);
+        mRecyclerView.setAdapter(mCustomImageAdapter);
 
         mDatabase = FirebaseFirestore.getInstance();
+        FirebaseStorage storage = FirebaseStorage.getInstance("gs://catproj.appspot.com/");
+        storageRef = storage.getReference();
+
+        showRecyclerView(catName);
+
+        btn_goMain.setOnClickListener(v -> onBackPressed());
+
+        btn_edit.setOnClickListener(v -> {
+            Intent intent1 = new Intent(getApplicationContext(), showMap.class);
+            startActivity(intent1);
+        });
+
+        mCustomImageAdapter.setOnItemClickListener((view, position) -> {
+            Log.d("CLICKED", "clicked");
+            //mArrayUri.get(position);
+        });
+
+    } // End onCreate();
+
+    /*
+    DB에서 정보 들고 와서 리사이클러뷰 보여주기
+     */
+    public void showRecyclerView(String catName){
         String docPath = "catIMG/" + catName;
         mDatabase.document(docPath)
                 .get()
-                .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                        if( task.isSuccessful() ){
-                            Map<String, Object> getDB = task.getResult().getData();
-                            String features = getDB.get("features").toString().replace("(endline)", "\n");
-                            int num = Integer.parseInt(getDB.get("num").toString());
-                            Log.d("SHOW", catName + " => " + features + " " + num);
-                            textViewFeatures.setText(features);
-
-                            FirebaseStorage storage = FirebaseStorage.getInstance("gs://catproj.appspot.com/");
-                            StorageReference storageRef = storage.getReference();
-                            mRecyclerView.setAdapter(mCustomImageAdapter);
-
-                            for(int i = 1; i < num + 1; i++){
-                                String filename = i + ".jpg";
-                                Log.d("GETURI", catName + "/" + filename);
-                                storageRef.child(catName + "/" + filename).getDownloadUrl().addOnCompleteListener(new OnCompleteListener<Uri>() {
-                                    @Override
-                                    public void onComplete(@NonNull Task<Uri> task) {
-                                        if(task.isSuccessful()){
-                                            noInfo.setVisibility(View.INVISIBLE);
-                                            mRecyclerView.setVisibility(View.VISIBLE);
-                                            mArrayUri.add(task.getResult());
-                                            Log.d("GETURI!!", "Success");
-                                            mCustomImageAdapter.notifyDataSetChanged();
-                                        }
-                                        else{
-                                            Log.d("GETURI!!", "Fail");
-                                        }
-                                    }
-                                });
-                            }
+                .addOnCompleteListener(task -> {
+                    if( task.isSuccessful() ){
+                        Map<String, Object> getDB = task.getResult().getData();
+                        if( getDB == null ){
+                            Log.d("DB Error", "Error get DB no data", task.getException());
+                            return;
                         }
-                        else{
-                            Log.d("SHOW", "Error show DB", task.getException());
+                        Object ob;
+                        if( (ob = getDB.get("features")) != null ){
+                            features = ob.toString().replace("(endline)", "\n");
                         }
+                        if( (ob = getDB.get("num")) != null ){
+                            num = (Long)ob;
+                        }
+                        textViewFeatures.setText(features);
+                        Log.d("SHOW", catName + " => " + features + " " + num);
+
+                        for(int i = 1; i < num + 1; i++){
+                            String filename = i + ".jpg";
+                            storageRef.child(catName + "/" + filename).getDownloadUrl().addOnCompleteListener(task1 -> {
+                                if( task1.isSuccessful() ){
+                                    Log.d("GETURI", catName + "/" + filename + " Success");
+                                    noInfo.setVisibility(View.INVISIBLE);
+                                    mRecyclerView.setVisibility(View.VISIBLE);
+                                    mArrayUri.add(task1.getResult());
+                                    mCustomImageAdapter.notifyDataSetChanged();
+                                }
+                                else{
+                                    Log.d("GETURI", catName + "/" + filename + " Fail");
+                                }
+                            });
+                        } // End for
+                    }
+                    else{
+                        Log.d("SHOW", "Error show DB", task.getException());
                     }
                 });
-
-
-        btn_goMain.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                onBackPressed();
-            }
-        });
-
-        btn_edit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(getApplicationContext(), showMap.class);
-                startActivity(intent);
-            }
-        });
-
-
-        mCustomImageAdapter.setOnItemClickListener(new CustomImageAdapter.OnItemClickListener() {
-            @Override
-            public void onItemClick(View view, int position) {
-                Log.d("CLICKED", "clicked");
-                mArrayUri.get(position);
-            }
-        });
-
-
-
-    }
-
+    } // End showRecyclerView();
 
 
 
