@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
@@ -20,11 +21,13 @@ import com.google.firebase.storage.StorageReference;
 import java.util.ArrayList;
 import java.util.Map;
 
+
 public class showAlbum extends AppCompatActivity {
 
     private FirebaseFirestore mDatabase;
     private StorageReference storageRef;
     private CustomImageAdapter mCustomImageAdapter;
+    private StaggeredGridLayoutManager manager;
 
     EditText editText;
     Button btn_search;
@@ -47,7 +50,6 @@ public class showAlbum extends AppCompatActivity {
         noInfo.setVisibility(View.INVISIBLE);
         mRecyclerView.setVisibility(View.VISIBLE);
 
-        cnt = 0;
         catNames = new ArrayList<>();
         catNames.add("blackcat");
         catNames.add("hurricane");
@@ -61,7 +63,7 @@ public class showAlbum extends AppCompatActivity {
         FirebaseStorage storage = FirebaseStorage.getInstance("gs://catproj.appspot.com/");
         storageRef = storage.getReference();
 
-        StaggeredGridLayoutManager manager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
+        manager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
         mRecyclerView.setLayoutManager(manager);
         mCustomImageAdapter = new CustomImageAdapter(R.layout.row, getApplicationContext(), mArrayUri);
         mRecyclerView.setAdapter(mCustomImageAdapter);
@@ -83,6 +85,22 @@ public class showAlbum extends AppCompatActivity {
             Intent intent1 = new Intent(getApplicationContext(), showCatInfo.class);
             intent1.putExtra("catName", IndexArray[position].toString());
             startActivity(intent1);
+        });
+
+        mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+
+                int[] lastItems = new int[2];
+                int totalItemCount = manager.getItemCount();
+                manager.findLastCompletelyVisibleItemPositions(lastItems);
+                int lastVisible = Math.max(lastItems[0], lastItems[1]);
+                if (lastVisible >= totalItemCount - 1) {
+                    Log.d("Recycler", "lastVisibled");
+                    manager.invalidateSpanAssignments();
+                }
+            }
         });
     } // End onCreate();
 
@@ -113,8 +131,8 @@ public class showAlbum extends AppCompatActivity {
                                     IndexArray[cnt] = catName;
                                     cnt++;
                                     mArrayUri.add(task1.getResult());
-                                    Log.d("GETURI!!", "Success");
-                                    mCustomImageAdapter.notifyDataSetChanged();
+                                    Log.d("GETURI!!", "Success "+cnt);
+                                    manager.invalidateSpanAssignments();
                                 }
                                 else{
                                     Log.d("GETURI!!", "Fail");
@@ -157,7 +175,7 @@ public class showAlbum extends AppCompatActivity {
                                 }
                             }
                             mCustomImageAdapter.setArrayUri(catNameUri);
-                            mCustomImageAdapter.notifyDataSetChanged();
+                            manager.invalidateSpanAssignments();
                             mRecyclerView.setVisibility(View.VISIBLE);
                         }
                         else{
