@@ -36,6 +36,9 @@ public class showAlbum extends AppCompatActivity {
     ArrayList<Uri> mArrayUri;
     ArrayList<String> catNames;
     Object[] IndexArray;
+    ArrayList<Uri> searchedUri;
+    ArrayList<String> searchedUriName;
+    boolean searched = false;
     int cnt = 0;
 
     @Override
@@ -58,6 +61,7 @@ public class showAlbum extends AppCompatActivity {
 
         mArrayUri = new ArrayList<>();
         IndexArray = new Object[catNames.size()];
+        cnt = 0;
 
         mDatabase = FirebaseFirestore.getInstance();
         FirebaseStorage storage = FirebaseStorage.getInstance("gs://catproj.appspot.com/");
@@ -72,18 +76,25 @@ public class showAlbum extends AppCompatActivity {
 
         editText.setOnKeyListener((v, keyCode, event) -> {
             if( keyCode == KeyEvent.KEYCODE_ENTER ){
+                Log.d("IndexArray", "key clicked");
                 searchName();
                 return true;
             }
             return false;
         });
 
-        btn_search.setOnClickListener(v -> searchName());
+        btn_search.setOnClickListener(v -> {
+            Log.d("IndexArray", "btn clicked"); searchName();});
 
         mCustomImageAdapter.setOnItemClickListener((view, position) -> {
             Log.d("CLICKED", "clicked " + IndexArray[position]);
             Intent intent1 = new Intent(getApplicationContext(), showCatInfo.class);
-            intent1.putExtra("catName", IndexArray[position].toString());
+            if( searched ){
+                intent1.putExtra("catName", searchedUriName.get(position));
+            }
+            else{
+                intent1.putExtra("catName", IndexArray[position].toString());
+            }
             startActivity(intent1);
         });
 
@@ -156,6 +167,7 @@ public class showAlbum extends AppCompatActivity {
             mCustomImageAdapter.setArrayUri(mArrayUri);
             mCustomImageAdapter.notifyDataSetChanged();
             mRecyclerView.setVisibility(View.VISIBLE);
+            searched = false;
             return;
         }
         String docPath = "catImgNum/names";
@@ -167,15 +179,18 @@ public class showAlbum extends AppCompatActivity {
                         Object ob;
                         if( (ob = getDB.get(searchName)) != null ){
                             String catName = ob.toString();
-                            ArrayList<Uri> catNameUri = new ArrayList<>();
-                            for(int i = 0; i < catNames.size(); i++){
+                            searchedUri = new ArrayList<>();
+                            searchedUriName = new ArrayList<>();
+                            for(int i = 0; i < IndexArray.length; i++){
                                 if( IndexArray[i].toString().equals(catName) ){
-                                    catNameUri.add(mArrayUri.get(i));
+                                    searchedUri.add(mArrayUri.get(i));
+                                    searchedUriName.add(catName);
+                                    searched = true;
                                     break;
                                 }
                             }
-                            mCustomImageAdapter.setArrayUri(catNameUri);
-                            manager.invalidateSpanAssignments();
+                            mCustomImageAdapter.setArrayUri(searchedUri);
+                            mCustomImageAdapter.notifyDataSetChanged();
                             mRecyclerView.setVisibility(View.VISIBLE);
                         }
                         else{
@@ -188,5 +203,6 @@ public class showAlbum extends AppCompatActivity {
                     }
                 });
     } // End searchName();
+
 
 }

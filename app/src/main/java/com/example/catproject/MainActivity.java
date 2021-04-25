@@ -1,5 +1,6 @@
 package com.example.catproject;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
@@ -12,18 +13,30 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 
@@ -31,8 +44,14 @@ public class MainActivity extends AppCompatActivity {
 
     private FirebaseFirestore mDatabase;
     private ArrayList<Uri> mArrayUri;
-    ImageView imageView;
     long num = 0;
+    String[] catNames;
+    String allNames = "";
+
+    Spinner spinner;
+    String selected;
+    Spinner spinner2;
+    String selected2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,69 +73,120 @@ public class MainActivity extends AppCompatActivity {
         mDatabase = FirebaseFirestore.getInstance();
 
 
-        imageView = findViewById(R.id.imageView);
         Button btn_map = findViewById(R.id.btn_map);
         btn_map.setOnClickListener(v -> {
             Intent intent = new Intent(getApplicationContext(), showMap.class);
             startActivity(intent);
         });
 
-        EditText et_info_name,et_info_type;
-        et_info_name = findViewById(R.id.et_info_name);
-        et_info_type = findViewById(R.id.et_info_type);
+        getAllNames();
 
 
-        Button btn_save = findViewById(R.id.btn_save);
-        btn_save.setOnClickListener(new View.OnClickListener() {
+        spinner = findViewById(R.id.spinner);
+
+
+        EditText editText_name = findViewById(R.id.editText_name);
+        EditText editText_features = findViewById(R.id.editText_features);
+        spinner2 = findViewById(R.id.spinner2);
+        String[] types = {"black1", "black2", "cheese", "godeung", "chaos", "samsaek"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item,types);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner2.setAdapter(adapter);
+        spinner2.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                selected2 = types[position];
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                selected2 = types[0];
+            }
+        });
+        Button btn_uploadNewCat = findViewById(R.id.btn_uploadNewCat);
+        btn_uploadNewCat.setOnClickListener(v -> {
+            String getCatName = editText_name.getText().toString();
+            String getFeature = editText_features.getText().toString();
+
+            HashMap result = new HashMap<>();
+            result.put("name", getCatName);
+            result.put("type", selected2);
+            int pm = 1; int pm2 = 1;
+            if( Math.random() < 0.5 ) pm = -1;;
+            if( Math.random() < 0.5 ) pm2 = -1;
+            result.put("latitude", 35.233 + pm * Math.random()*0.005);
+            result.put("longitude", 129.08 + pm2 * Math.random()*0.005);
+            mDatabase.collection("catinfo")
+                    .add(result)
+                    .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                        @Override
+                        public void onSuccess(DocumentReference documentReference) {
+                            Log.d("ADD","Document added ID: "+documentReference.getId());
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.d("ADD","Error adding: ",e);
+                        }
+                    });
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("names", getCatName);
+            data.put("features", getFeature);
+            data.put("num", 0);
+            mDatabase.collection("catIMG").document(getCatName)
+                    .set(data);
+            data = new HashMap<>();
+            data.put(getCatName, getCatName);
+            mDatabase.collection("catImgNum").document("names")
+                    .set(data, SetOptions.merge());
+            data = new HashMap<>();
+            data.put(getCatName, 0);
+            mDatabase.collection("catImgNum").document("num")
+                    .set(data, SetOptions.merge());
+
+            mDatabase.document("catImgNum/names")
+                    .get()
+                    .addOnCompleteListener(task -> {
+                        if( task.isSuccessful() ){
+                            Map<String, Object> getDB = task.getResult().getData();
+                            if( getDB == null ){
+                                Log.d("DB Error", "Error get DB no data", task.getException());
+                                return;
+                            }
+                            Object ob;
+                            if( (ob = getDB.get("allNames")) != null ){
+                                allNames = ob.toString() + "," + getCatName;
+                                Log.d("AllNames", "allnames " + allNames);
+                                mDatabase.document("catImgNum/names").update("allNames", allNames);
+                                getAllNames();
+                            }
+                            else{
+                                Log.d("AllNames", "Error");
+                            }
+                        }
+                        else{
+                            Log.d("SHOW", "Error show DB", task.getException());
+                        }
+                    });
+            editText_name.setText(null);
+            editText_features.setText(null);
+
+        });
+
+
+
+        Button btn_goToAlbum = findViewById(R.id.btn_goToAlbum);
+        btn_goToAlbum.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                String getCatName = et_info_name.getText().toString();
-//                String getType = et_info_type.getText().toString();
-//
-//                Drawable img = getResources().getDrawable(R.drawable.cat1);
-//                Bitmap bitmap = ((BitmapDrawable)img).getBitmap();
-//                String simg = Info.BitmapToString(bitmap);
-//
-//                //hashmap 만들기
-//                HashMap result = new HashMap<>();
-//                result.put("name", getCatName);
-//                result.put("type", getType);
-//                result.put("img", simg);
-//
-//                mDatabase.collection("catinfo")
-//                        .add(result)
-//                        .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-//                            @Override
-//                            public void onSuccess(DocumentReference documentReference) {
-//                                Log.d("ADD","Document added ID: "+documentReference.getId());
-//                            }
-//                        })
-//                        .addOnFailureListener(new OnFailureListener() {
-//                            @Override
-//                            public void onFailure(@NonNull Exception e) {
-//                                Log.d("ADD","Error adding: ",e);
-//                            }
-//                        });
-
                 Intent intent = new Intent(getApplicationContext(), showAlbum.class);
                 startActivity(intent);
-
-//                Drawable img = getResources().getDrawable(R.drawable.cat1);
-//                Bitmap bitmap = ((BitmapDrawable)img).getBitmap();
-//                String simg = BitmapToString(bitmap);
-//
-//                //hashmap 만들기
-//                HashMap result = new HashMap<>();
-//                result.put("img1", simg);
-//
-//                mDatabase.collection("catIMG")
-//                        .document("치즈")
-//                        .set(result, SetOptions.merge());
             }
         });
 
-        Button btn_showDB = findViewById(R.id.btn_showDB);
-        btn_showDB.setOnClickListener(v -> {
+        Button btn_uploadImages = findViewById(R.id.btn_uploadImages);
+        btn_uploadImages.setOnClickListener(v -> {
             if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
                     && ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                 // TODO: Consider calling
@@ -128,7 +198,6 @@ public class MainActivity extends AppCompatActivity {
                 // for ActivityCompat#requestPermissions for more details.
                 return;
             }
-
             getImgFromAlbum();
         });
 
@@ -164,7 +233,7 @@ public class MainActivity extends AppCompatActivity {
                 Uri imageuri = data.getData();
                 mArrayUri.add(imageuri);
             }
-            uploadFile("치즈");
+            uploadFile(selected);
         }
         else{
             Toast.makeText(this, "사진 선택 취소", Toast.LENGTH_LONG).show();
@@ -214,7 +283,42 @@ public class MainActivity extends AppCompatActivity {
         } else {
             Toast.makeText(getApplicationContext(), "파일을 먼저 선택하세요.", Toast.LENGTH_SHORT).show();
         }
-    }
+    } // End uploadFile()
+
+
+    public void getAllNames(){
+        mDatabase.document("catImgNum/names")
+                .get()
+                .addOnCompleteListener(task -> {
+                    if( task.isSuccessful() ){
+                        Map<String, Object> getDB = task.getResult().getData();
+                        if( getDB == null ){
+                            Log.d("DB Error", "Error get DB no data", task.getException());
+                            return;
+                        }
+                        Object ob;
+                        if( (ob = getDB.get("allNames")) != null ){
+                            catNames = ob.toString().split(",");
+                        }
+                        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item,catNames);
+                        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                        spinner.setAdapter(adapter);
+                        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                            @Override
+                            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                                selected = catNames[position];
+                            }
+                            @Override
+                            public void onNothingSelected(AdapterView<?> parent) {
+                                selected = catNames[0];
+                            }
+                        });
+                    }
+                    else{
+                        Log.d("SHOW", "Error show DB", task.getException());
+                    }
+                });
+    } // End getAllNames()
 
 //        Button btn_auth = (Button)findViewById(R.id.btn_auth);
 //        btn_auth.setOnClickListener(new View.OnClickListener() {
