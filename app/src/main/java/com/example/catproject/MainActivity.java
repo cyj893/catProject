@@ -44,8 +44,9 @@ public class MainActivity extends AppCompatActivity {
 
     private FirebaseFirestore mDatabase;
     private ArrayList<Uri> mArrayUri;
+    private permissionSupport permission;
     long num = 0;
-    String[] catNames;
+    public static String[] catNames;
     String allNames = "";
 
     Spinner spinner;
@@ -57,6 +58,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        permissionCheck();
+
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         FirebaseUser currentUser = mAuth.getCurrentUser();
         mAuth.signInAnonymously()
@@ -89,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
         EditText editText_features = findViewById(R.id.editText_features);
         spinner2 = findViewById(R.id.spinner2);
         String[] types = {"black1", "black2", "cheese", "godeung", "chaos", "samsaek"};
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item,types);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, types);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinner2.setAdapter(adapter);
         spinner2.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -107,30 +111,21 @@ public class MainActivity extends AppCompatActivity {
             String getCatName = editText_name.getText().toString();
             String getFeature = editText_features.getText().toString();
 
-            HashMap result = new HashMap<>();
-            result.put("name", getCatName);
-            result.put("type", selected2);
-            int pm = 1; int pm2 = 1;
-            if( Math.random() < 0.5 ) pm = -1;;
-            if( Math.random() < 0.5 ) pm2 = -1;
-            result.put("latitude", 35.233 + pm * Math.random()*0.005);
-            result.put("longitude", 129.08 + pm2 * Math.random()*0.005);
-            mDatabase.collection("catinfo")
-                    .add(result)
-                    .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-                        @Override
-                        public void onSuccess(DocumentReference documentReference) {
-                            Log.d("ADD","Document added ID: "+documentReference.getId());
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            Log.d("ADD","Error adding: ",e);
-                        }
-                    });
 
             Map<String, Object> data = new HashMap<>();
+            data.put("name", getCatName);
+            data.put("type", selected2);
+            int pm = 1; int pm2 = 1;
+            if( Math.random() < 0.5 ) pm = -1;
+            if( Math.random() < 0.5 ) pm2 = -1;
+            data.put("latitude", 35.233 + pm * Math.random()*0.005);
+            data.put("longitude", 129.08 + pm2 * Math.random()*0.005);
+            mDatabase.collection("catinfo")
+                    .add(data)
+                    .addOnSuccessListener(documentReference -> Log.d("ADD","Document added ID: "+documentReference.getId()))
+                    .addOnFailureListener(e -> Log.d("ADD","Error adding: ",e));
+
+            data = new HashMap<>();
             data.put("names", getCatName);
             data.put("features", getFeature);
             data.put("num", 0);
@@ -177,12 +172,9 @@ public class MainActivity extends AppCompatActivity {
 
 
         Button btn_goToAlbum = findViewById(R.id.btn_goToAlbum);
-        btn_goToAlbum.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(getApplicationContext(), showAlbum.class);
-                startActivity(intent);
-            }
+        btn_goToAlbum.setOnClickListener(v -> {
+            Intent intent = new Intent(getApplicationContext(), showAlbum.class);
+            startActivity(intent);
         });
 
         Button btn_uploadImages = findViewById(R.id.btn_uploadImages);
@@ -300,7 +292,7 @@ public class MainActivity extends AppCompatActivity {
                         if( (ob = getDB.get("allNames")) != null ){
                             catNames = ob.toString().split(",");
                         }
-                        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item,catNames);
+                        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, catNames);
                         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                         spinner.setAdapter(adapter);
                         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -319,6 +311,25 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
     } // End getAllNames()
+
+
+    private void permissionCheck(){
+        if( Build.VERSION.SDK_INT >= 23 ){
+            permission = new permissionSupport(this, this);
+            if( !permission.checkPermission() ){
+                permission.requestPermission();
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults){
+        if( permission.permissionResult(requestCode, permissions, grantResults) ){
+            permission.requestPermission();
+        }
+    }
+
+
 
 //        Button btn_auth = (Button)findViewById(R.id.btn_auth);
 //        btn_auth.setOnClickListener(new View.OnClickListener() {

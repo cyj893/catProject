@@ -4,6 +4,9 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Base64;
 import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
@@ -24,6 +27,7 @@ public class Info {
     public String catName;
     public String type;
     public String img;
+    public static String[] allNames;
 
     public Info() {
         // Default constructor required for calls to DataSnapshot.getValue(User.class)
@@ -54,6 +58,8 @@ public class Info {
     public String getImg() { return img; }
 
     public void setImg(String img) { this.img = img; }
+
+    public String[] getAllNames() { return allNames; }
 
     /*
      * String을 Bitmap으로 변환
@@ -112,4 +118,26 @@ public class Info {
                     }
                 });
     }
+
+
+    public static void getAllNames(FirebaseFirestore mDatabase){
+        mDatabase.document("catImgNum/names")
+                .get()
+                .addOnCompleteListener(task -> {
+                    if( task.isSuccessful() ){
+                        Map<String, Object> getDB = task.getResult().getData();
+                        if( getDB == null ){
+                            Log.d("DB Error", "Error get DB no data", task.getException());
+                        }
+                        Object ob;
+                        if( (ob = getDB.get("allNames")) != null ){
+                            allNames = ob.toString().split(",");
+                        }
+                    }
+                    else{
+                        Log.d("SHOW", "Error show DB", task.getException());
+                    }
+                });
+    } // End getAllNames()
+
 }

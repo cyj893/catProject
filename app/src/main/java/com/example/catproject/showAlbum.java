@@ -34,7 +34,7 @@ public class showAlbum extends AppCompatActivity {
     View noInfo;
     RecyclerView mRecyclerView;
     ArrayList<Uri> mArrayUri;
-    ArrayList<String> catNames;
+    String[] catNames;
     Object[] IndexArray;
     ArrayList<Uri> searchedUri;
     ArrayList<String> searchedUriName;
@@ -53,19 +53,15 @@ public class showAlbum extends AppCompatActivity {
         noInfo.setVisibility(View.INVISIBLE);
         mRecyclerView.setVisibility(View.VISIBLE);
 
-        catNames = new ArrayList<>();
-        catNames.add("blackcat");
-        catNames.add("hurricane");
-        catNames.add("치즈");
-        catNames.add("카오스");
-
-        mArrayUri = new ArrayList<>();
-        IndexArray = new Object[catNames.size()];
-        cnt = 0;
-
         mDatabase = FirebaseFirestore.getInstance();
         FirebaseStorage storage = FirebaseStorage.getInstance("gs://catproj.appspot.com/");
         storageRef = storage.getReference();
+
+        catNames = MainActivity.catNames;
+
+        mArrayUri = new ArrayList<>();
+        IndexArray = new Object[catNames.length];
+        cnt = 0;
 
         manager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
         mRecyclerView.setLayoutManager(manager);
@@ -130,25 +126,41 @@ public class showAlbum extends AppCompatActivity {
                             return;
                         }
                         Object ob;
-                        for(int i = 0; i < catNames.size(); i++){
-                            String catName = catNames.get(i);
+                        for(int i = 0; i < catNames.length; i++){
+                            String catName = catNames[i];
                             long num = 0;
                             if( (ob = getDB.get(catName)) != null ){
                                 num = (Long)ob;
+                                Log.d("GETURI", catName + "/" + num);
                             }
-                            Log.d("GETURI", catName + "/" + num);
-                            storageRef.child(catName + "/" + num + ".jpg").getDownloadUrl().addOnCompleteListener(task1 -> {
-                                if( task1.isSuccessful() ){
-                                    IndexArray[cnt] = catName;
-                                    cnt++;
-                                    mArrayUri.add(task1.getResult());
-                                    Log.d("GETURI!!", "Success "+cnt);
-                                    manager.invalidateSpanAssignments();
-                                }
-                                else{
-                                    Log.d("GETURI!!", "Fail");
-                                }
-                            });
+                            if( num == 0 ){
+                                storageRef.child("0.jpg").getDownloadUrl().addOnCompleteListener(task1 -> {
+                                    if( task1.isSuccessful() ){
+                                        IndexArray[cnt] = catName;
+                                        cnt++;
+                                        mArrayUri.add(task1.getResult());
+                                        Log.d("GETURI!!", "Success "+cnt);
+                                        manager.invalidateSpanAssignments();
+                                    }
+                                    else{
+                                        Log.d("GETURI!!", "Fail");
+                                    }
+                                });
+                            }
+                            else{
+                                storageRef.child(catName + "/" + num + ".jpg").getDownloadUrl().addOnCompleteListener(task1 -> {
+                                    if( task1.isSuccessful() ){
+                                        IndexArray[cnt] = catName;
+                                        cnt++;
+                                        mArrayUri.add(task1.getResult());
+                                        Log.d("GETURI!!", "Success "+cnt);
+                                        manager.invalidateSpanAssignments();
+                                    }
+                                    else{
+                                        Log.d("GETURI!!", "Fail");
+                                    }
+                                });
+                            }
                         }
                     }
                     else{
