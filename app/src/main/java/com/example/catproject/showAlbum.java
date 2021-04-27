@@ -65,7 +65,8 @@ public class showAlbum extends AppCompatActivity {
 
         manager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
         mRecyclerView.setLayoutManager(manager);
-        mCustomImageAdapter = new CustomImageAdapter(R.layout.row, getApplicationContext(), mArrayUri);
+        mCustomImageAdapter = new CustomImageAdapter(2, R.layout.row2, getApplicationContext(), mArrayUri);
+        mCustomImageAdapter.setIndexArray(IndexArray);
         mRecyclerView.setAdapter(mCustomImageAdapter);
 
         showRecyclerView();

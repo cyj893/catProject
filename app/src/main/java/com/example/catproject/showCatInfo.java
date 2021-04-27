@@ -114,12 +114,14 @@ public class showCatInfo extends AppCompatActivity {
         mArrayUri = new ArrayList<>();
         manager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
         mRecyclerView.setLayoutManager(manager);
-        mCustomImageAdapter = new CustomImageAdapter(R.layout.row, getApplicationContext(), mArrayUri);
+        mCustomImageAdapter = new CustomImageAdapter(1, R.layout.row, getApplicationContext(), mArrayUri);
         mRecyclerView.setAdapter(mCustomImageAdapter);
 
         btn_goMain.setOnClickListener(v -> onBackPressed());
         btn_edit.setOnClickListener(v -> {
-            Intent intent1 = new Intent(getApplicationContext(), showMap.class);
+            Intent intent1 = new Intent(getApplicationContext(), editInfo.class);
+            intent1.putExtra("names", names);
+            intent1.putExtra("features", features);
             startActivity(intent1);
         });
 
@@ -129,14 +131,7 @@ public class showCatInfo extends AppCompatActivity {
             Glide.with(getApplicationContext()).load(mArrayUri.get(nowPos)).diskCacheStrategy(DiskCacheStrategy.ALL).into(photoView);
             layout1.setVisibility(View.INVISIBLE);
             layout2.setVisibility(View.VISIBLE);
-            btn_left.setVisibility(View.VISIBLE);
-            btn_right.setVisibility(View.VISIBLE);
-            if( nowPos == 0 ){
-                btn_left.setVisibility(View.INVISIBLE);
-            }
-            else if( nowPos == mArrayUri.size() - 1 ){
-                btn_right.setVisibility(View.INVISIBLE);
-            }
+            setBtnVisibility();
         });
 
         mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
@@ -168,24 +163,14 @@ public class showCatInfo extends AppCompatActivity {
             if( layout2.getVisibility() == View.VISIBLE && nowPos > 0 ){
                 nowPos--;
                 Glide.with(getApplicationContext()).load(mArrayUri.get(nowPos)).diskCacheStrategy(DiskCacheStrategy.ALL).into(photoView);
-                if( nowPos == 0 ){
-                    btn_left.setVisibility(View.INVISIBLE);
-                }
-                else if( nowPos == mArrayUri.size() - 2 ){
-                    btn_right.setVisibility(View.VISIBLE);
-                }
+                setBtnVisibility();
             }
         });
         btn_right.setOnClickListener(v -> {
             if( layout2.getVisibility() == View.VISIBLE && nowPos < mArrayUri.size() - 1 ){
                 nowPos++;
                 Glide.with(getApplicationContext()).load(mArrayUri.get(nowPos)).diskCacheStrategy(DiskCacheStrategy.ALL).into(photoView);
-                if( nowPos == mArrayUri.size() - 1 ){
-                    btn_right.setVisibility(View.INVISIBLE);
-                }
-                else if( nowPos == 1 ){
-                    btn_left.setVisibility(View.VISIBLE);
-                }
+                setBtnVisibility();
             }
         });
         btn_download.setOnClickListener(v -> {
@@ -264,6 +249,21 @@ public class showCatInfo extends AppCompatActivity {
         }
     }
 
+    public void setBtnVisibility(){
+        if( nowPos == mArrayUri.size() - 1 ){
+            btn_right.setVisibility(View.INVISIBLE);
+        }
+        else{
+            btn_right.setVisibility(View.VISIBLE);
+        }
+        if( nowPos == 0 ){
+            btn_left.setVisibility(View.INVISIBLE);
+        }
+        else{
+            btn_left.setVisibility(View.VISIBLE);
+        }
+    }
+
     /*
     DB에서 정보 들고 와서 인포 보여주기
      */
@@ -280,12 +280,12 @@ public class showCatInfo extends AppCompatActivity {
                         }
                         Object ob;
                         if( (ob = getDB.get("names")) != null ){
-                            names = ob.toString().replace("(endline)", ", ");
-                            textViewName.setText(names);
+                            names = ob.toString();
+                            textViewName.setText(names.replace("(endline)", ", "));
                         }
                         if( (ob = getDB.get("features")) != null ){
-                            features = ob.toString().replace("(endline)", "\n");
-                            textViewFeatures.setText(features);
+                            features = ob.toString();
+                            textViewFeatures.setText(features.replace("(endline)", "\n"));
                         }
                         if( (ob = getDB.get("num")) != null ){
                             num = (Long)ob;

@@ -36,18 +36,10 @@
                     android:scheme="https" />
             </intent-filter>
         </activity>
-        <!--
-        <activity android:name=".MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        -->
         <activity android:name=".showMap" />
         <activity android:name=".showCatInfo" />
         <activity android:name=".showAlbum" />
+        <activity android:name=".editInfo" android:theme="@android:style/Theme.Dialog" />
     </application>
 
 </manifest>
