@@ -8,36 +8,38 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
-import android.widget.HorizontalScrollView;
-import android.widget.ImageButton;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.core.view.ViewCompat;
-
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.bitmap.CenterCrop;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 public class editInfo extends Activity {
 
     private FirebaseFirestore mDatabase;
     private ArrayList<Uri> mArrayUri;
-    //private ArrayList<Integer> indexes;
 
     LinearLayout namesSpace;
     LinearLayout featuresSpace;
     LinearLayout imageSpace;
+    Button btn_addName;
+    Button btn_addFeature;
     Button btn_addImg;
     TextView addImgInfo;
     Button btn_cancel;
@@ -46,7 +48,8 @@ public class editInfo extends Activity {
     String[] names;
     String[] features;
     long num = 0;
-
+    int changed = 0;
+    int prevsize = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,34 +63,75 @@ public class editInfo extends Activity {
         features = intent.getStringExtra("features").split("\\(endline\\)");
 
         mArrayUri = new ArrayList<>();
-        //indexes = new ArrayList<>();
         namesSpace = findViewById(R.id.namesSpace);
         featuresSpace = findViewById(R.id.featuresSpace);
         imageSpace = findViewById(R.id.imageSpace);
         btn_cancel = findViewById(R.id.btn_cancel);
         btn_submit = findViewById(R.id.btn_submit);
 
-        for(int i = 0; i < names.length - 1; i++){
-            createTextView(names[i] + ", ", namesSpace);
+        for (String name : names) {
+            createTextView(name + ", ", namesSpace);
         }
-        createTextView(names[names.length-1], namesSpace);
 
-        for(int i = 0; i < features.length - 1; i++){
-            createTextView("#" + features[i] + ", ", featuresSpace);
+        for (String feature : features) {
+            createTextView("#" + feature + ", ", featuresSpace);
         }
-        createTextView("#" + features[features.length-1], featuresSpace);
 
         mDatabase = FirebaseFirestore.getInstance();
 
+        btn_addName = findViewById(R.id.btn_addName);
+        btn_addFeature = findViewById(R.id.btn_addFeature);
         btn_addImg = findViewById(R.id.btn_addImg);
         addImgInfo = findViewById(R.id.addImgInfo);
 
+        btn_addName.setOnClickListener(v -> createEditView(namesSpace, 0));
+        btn_addFeature.setOnClickListener(v -> createEditView(featuresSpace, 1));
         btn_addImg.setOnClickListener(v -> getImgFromAlbum() );
         btn_cancel.setOnClickListener(v -> onBackPressed() );
         btn_submit.setOnClickListener(v -> {
+            if( mArrayUri.size() <= 0 && changed <= 0 ) return;
             if( mArrayUri.size() > 0 ){
                 uploadFile(names[0]);
             }
+            if( changed != 0 ){
+                TextView tv;
+                String namesString = names[0];
+                Map<String, Object> data = new HashMap<>();
+                Map<String,Object> deletes = new HashMap<>();
+                int count = namesSpace.getChildCount();
+                for(int i = 1; i < count; i++) {
+                    tv = (TextView)namesSpace.getChildAt(i);
+                    String name = tv.getText().toString().replace(", ", "");
+                    if( tv.getCurrentTextColor() == Color.parseColor("#9F9F9F") ){
+                        namesString = namesString + "(endline)" + name;
+                        data.put(name, names[0]);
+                    }
+                    else{
+                        deletes.put(name, FieldValue.delete());
+                    }
+                }
+                Log.d("CHANGEDSTRING", namesString);
+                mDatabase.document("catIMG/" + names[0]).update("names", namesString);
+                mDatabase.document("catImgNum/names").set(data, SetOptions.merge());
+                mDatabase.document("catImgNum/names").update(deletes);
+
+                String featuresString = "";
+                count = featuresSpace.getChildCount();
+                if( count >= 1 ){
+                    tv = (TextView)featuresSpace.getChildAt(0);
+                    featuresString = tv.getText().toString();
+                }
+                for(int i = 1; i < count; i++) {
+                    tv = (TextView)featuresSpace.getChildAt(i);
+                    if( tv.getCurrentTextColor() == Color.parseColor("#9F9F9F") ) {
+                        featuresString = featuresString + "(endline)" + tv.getText().toString();
+                    }
+                }
+                featuresString = featuresString.replace(", ", "").replace("#", "");
+                Log.d("CHANGEDSTRING", featuresString);
+                mDatabase.document("catIMG/" + names[0]).update("features", featuresString);
+            }
+            onBackPressed();
         });
 
     }
@@ -98,39 +142,68 @@ public class editInfo extends Activity {
 
         LinearLayout.LayoutParams param = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         textView.setLayoutParams(param);
+        textView.setTextColor(Color.parseColor("#9F9F9F"));
+        textView.setTextSize(15);
 
-//        textView.setOnClickListener(v -> {
-//            ;
-//        });
+        textView.setOnLongClickListener(v -> {
+            if( textView.getText().toString().equals(names[0] + ", ") ) return true;
+            if( textView.getCurrentTextColor() == Color.parseColor("#D6D6D6") ){
+                textView.setTextColor(Color.parseColor("#9F9F9F"));
+                changed--;
+            }
+            else{
+                textView.setTextColor(Color.parseColor("#D6D6D6"));
+                changed++;
+            }
+            return true;
+        });
 
         linearLayout.addView(textView);
     }
 
+    public void createEditView(LinearLayout linearLayout, int hashTag){
+        EditText editText = new EditText(getApplicationContext());
+        editText.setHint("입력하세요");
+        editText.setEms(10);
+
+        LinearLayout.LayoutParams param = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        editText.setLayoutParams(param);
+        editText.setTextSize(15);
+
+        editText.setOnKeyListener((v, keyCode, event) -> {
+            if( keyCode == KeyEvent.KEYCODE_ENTER ){
+                if( hashTag == 1 ){
+                    createTextView("#" + editText.getText().toString() + ", ", linearLayout);
+                }
+                else{
+                    createTextView(editText.getText().toString() + ", ", linearLayout);
+                }
+                editText.setVisibility(View.GONE);
+                changed++;
+                return true;
+            }
+            return false;
+        });
+
+        linearLayout.addView(editText);
+    }
+
     public void createImageView(){
-        for(int i = 0; i < mArrayUri.size(); i++){
+        for(int i = prevsize; i < mArrayUri.size(); i++){
             ImageView imageView = new ImageView(getApplicationContext());
             LinearLayout.LayoutParams param = new LinearLayout.LayoutParams(convertDPtoPX(100), convertDPtoPX(100));
-            imageView.setBackgroundColor(Color.parseColor("#000000"));
             imageView.setLayoutParams(param);
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-//                int id = View.generateViewId();
-//                Log.d("ID MaKE", String.valueOf(id));
-//                imageView.setId(id);
-//                indexes.add(imageView.getId());
-//            }
-//            imageView.setOnClickListener(v -> {
-//                int id = imageView.getId();
-//                for(int j = 0; j < indexes.size(); j++){
-//                    if( indexes.get(j) == id ){
-//                        mArrayUri.remove(j);
-//                        imageView.setVisibility(View.GONE);
-//                        break;
-//                    }
-//                }
-//            });
+            imageView.setTag( "iv" + i );
+            imageView.setOnLongClickListener(v -> {
+                int index = Integer.parseInt(imageView.getTag().toString().replaceAll("[^0-9]", ""));
+                mArrayUri.set(index, null);
+                imageView.setVisibility(View.GONE);
+                return true;
+            });
             Glide.with(getApplicationContext()).load(mArrayUri.get(i)).transform(new CenterCrop()).into(imageView);
             imageSpace.addView(imageView);
         }
+        prevsize = mArrayUri.size();
         addImgInfo.setVisibility(View.GONE);
     }
 
@@ -145,14 +218,13 @@ public class editInfo extends Activity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
         }
-        intent.setAction(Intent.ACTION_GET_CONTENT);
+        intent.setAction(Intent.ACTION_OPEN_DOCUMENT);
         startActivityForResult(intent, 0);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        mArrayUri = new ArrayList<>();
 
         if (requestCode == 0 && resultCode == RESULT_OK && data != null) {
             // Get the Image from data
@@ -197,6 +269,7 @@ public class editInfo extends Activity {
                                 num = (Long)ob;
                             }
                             for(int i = 0; i < mArrayUri.size(); i++){
+                                if( mArrayUri.get(i) == null ) continue;
                                 Uri filePath = mArrayUri.get(i);
                                 String filename = (++num) + ".jpg";
                                 StorageReference storageRef = storage.getReferenceFromUrl("gs://catproj.appspot.com/").child( catName + "/" + filename);
@@ -210,7 +283,6 @@ public class editInfo extends Activity {
                             }
                             mDatabase.document(docPath).update("num", num);
                             mDatabase.document("catImgNum/num").update(catName, num);
-                            onBackPressed();
                         }
                         else{
                             Log.d("SHOW", "Error show DB", task.getException());

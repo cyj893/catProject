@@ -10,42 +10,73 @@
     android:padding="20dp"
     tools:context=".editInfo">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="이름"
-        android:layout_marginLeft="10dp"
-        android:textStyle="bold"
-        android:textSize="17sp"
-        android:layout_marginStart="10dp" />
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="이름"
+            android:layout_marginLeft="10dp"
+            android:layout_gravity="center"
+            android:textStyle="bold"
+            android:textSize="17sp"
+            android:layout_marginStart="10dp" />
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_addName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/round_btn_2"
+            android:layout_margin="10dp"
+            android:layout_gravity="center"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
+    </LinearLayout>
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="60dp"
         android:scrollbars="none"
         android:padding="10dp">
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/namesSpace"
             android:orientation="horizontal">
         </LinearLayout>
     </HorizontalScrollView>
 
-    <TextView
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="특징"
-        android:layout_marginLeft="10dp"
-        android:textStyle="bold"
-        android:textSize="17sp"
-        android:layout_marginStart="10dp" />
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="특징"
+            android:layout_gravity="center"
+            android:layout_marginLeft="10dp"
+            android:textStyle="bold"
+            android:textSize="17sp"
+            android:layout_marginStart="10dp" />
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_addFeature"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/round_btn_2"
+            android:layout_margin="10dp"
+            android:layout_gravity="center"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
+    </LinearLayout>
+
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="60dp"
         android:scrollbars="none"
         android:padding="10dp">
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/featuresSpace"
             android:orientation="horizontal">
@@ -59,7 +90,7 @@
         android:padding="10dp">
         <LinearLayout
             android:id="@+id/imageSpace"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content">
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btn_addImg"
