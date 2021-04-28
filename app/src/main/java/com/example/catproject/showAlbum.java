@@ -181,6 +181,7 @@ public class showAlbum extends AppCompatActivity {
             mCustomImageAdapter.notifyDataSetChanged();
             mRecyclerView.setVisibility(View.VISIBLE);
             searched = false;
+            mCustomImageAdapter.setSearched(searched);
             return;
         }
         String docPath = "catImgNum/names";
@@ -199,12 +200,15 @@ public class showAlbum extends AppCompatActivity {
                                     searchedUri.add(mArrayUri.get(i));
                                     searchedUriName.add(catName);
                                     searched = true;
-                                    break;
                                 }
                             }
-                            mCustomImageAdapter.setArrayUri(searchedUri);
-                            mCustomImageAdapter.notifyDataSetChanged();
-                            mRecyclerView.setVisibility(View.VISIBLE);
+                            if( searched ){
+                                mCustomImageAdapter.setSearched(searched);
+                                mCustomImageAdapter.setSearchedArrayUriName(searchedUriName);
+                                mCustomImageAdapter.setArrayUri(searchedUri);
+                                mCustomImageAdapter.notifyDataSetChanged();
+                                mRecyclerView.setVisibility(View.VISIBLE);
+                            }
                         }
                         else{
                             noInfo.setVisibility(View.VISIBLE);

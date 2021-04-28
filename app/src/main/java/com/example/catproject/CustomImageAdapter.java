@@ -12,6 +12,8 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.CenterCrop;
+import com.bumptech.glide.load.resource.bitmap.FitCenter;
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
 
 import java.util.ArrayList;
@@ -22,7 +24,9 @@ public class CustomImageAdapter extends RecyclerView.Adapter<CustomImageAdapter.
     int contents;
     Context mContext;
     ArrayList<Uri> mArrayUri;
+    ArrayList<String> searchedUriName;
     Object[] IndexArray;
+    boolean searched = false;
 
     public CustomImageAdapter(int contents, int itemLayout, Context context, ArrayList<Uri> mArrayUri){
         this.contents = contents;
@@ -34,6 +38,12 @@ public class CustomImageAdapter extends RecyclerView.Adapter<CustomImageAdapter.
     public void setIndexArray(Object[] IndexArray) { this.IndexArray = IndexArray; }
     public void setArrayUri(ArrayList<Uri> mArrayUri){
         this.mArrayUri = mArrayUri;
+    }
+    public void setSearchedArrayUriName(ArrayList<String> searchedUriName){
+        this.searchedUriName = searchedUriName;
+    }
+    public void setSearched(boolean b){
+        this.searched = b;
     }
 
     @Override public int getItemCount() {
@@ -73,13 +83,23 @@ public class CustomImageAdapter extends RecyclerView.Adapter<CustomImageAdapter.
     @Override
     public void onBindViewHolder(@NonNull CustomImageAdapter.ViewHolder holder, int position) {
         if( contents == 2 ){
-            holder.textView.setText(IndexArray[position].toString());
+            if( searched ){
+                holder.textView.setText(searchedUriName.get(position));
+            }
+            else{
+                holder.textView.setText(IndexArray[position].toString());
+            }
             Glide.with(mContext).load(mArrayUri.get(position))
-                    .transform(new RoundedCorners(100)).into(holder.image);
+                    .transform(new FitCenter(), new RoundedCorners(convertDPtoPX(11))).into(holder.image);
         }
         else{
             Glide.with(mContext).load(mArrayUri.get(position)).into(holder.image);
         }
+    }
+
+    public int convertDPtoPX(int dp) {
+        float density = mContext.getResources().getDisplayMetrics().density;
+        return Math.round((float) dp * density);
     }
 
     public interface OnItemClickListener {
